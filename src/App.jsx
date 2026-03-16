@@ -44,6 +44,11 @@ function fmt(d) {
   return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
+function hexToRgb(hex) {
+  const h = hex.replace('#', '')
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]
+}
+
 function buildNarrative(site, borough) {
   const paras = []
   const date  = fmt(site.effective_date)
@@ -192,6 +197,67 @@ function buildMarketingContent(edesig, oer) {
       : 'Contact Impact Environmental to confirm site status and support your next transaction or permit application.'
 
   return { headline, body, cta }
+}
+
+async function fetchMapTileImage(lat, lng, markerColor) {
+  const ZOOM = 16, TS = 256, G = 3, STRIP_H = 282
+  const n = Math.pow(2, ZOOM)
+  const latRad = lat * Math.PI / 180
+  const tileXf = (lng + 180) / 360 * n
+  const tileYf = (1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n
+  const tileX = Math.floor(tileXf)
+  const tileY = Math.floor(tileYf)
+  const fracX = (tileXf - tileX) * TS
+  const fracY = (tileYf - tileY) * TS
+  const markerPx = TS + fracX
+  const markerPy = TS + fracY
+
+  function loadTile(tx, ty) {
+    return new Promise(resolve => {
+      const tyc = Math.max(0, Math.min(n - 1, ty))
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.onload = () => resolve(img)
+      img.onerror = () => resolve(null)
+      img.src = `https://a.tile.openstreetmap.org/${ZOOM}/${tx}/${tyc}.png`
+    })
+  }
+
+  const tiles = await Promise.all(
+    Array.from({ length: G * G }, (_, i) => {
+      const col = i % G, row = Math.floor(i / G)
+      return loadTile(tileX + col - 1, tileY + row - 1)
+    })
+  )
+
+  const canvas = document.createElement('canvas')
+  canvas.width = TS * G; canvas.height = TS * G
+  const ctx = canvas.getContext('2d')
+  ctx.fillStyle = '#e8e8e8'; ctx.fillRect(0, 0, canvas.width, canvas.height)
+  tiles.forEach((img, i) => {
+    if (img) ctx.drawImage(img, (i % G) * TS, Math.floor(i / G) * TS)
+  })
+
+  // Draw marker
+  const [mr, mg, mb] = hexToRgb(markerColor)
+  const mx = markerPx, my = markerPy
+  // Pulse halo
+  ctx.beginPath(); ctx.arc(mx, my, 18, 0, 2 * Math.PI)
+  ctx.fillStyle = `rgba(${mr},${mg},${mb},0.22)`; ctx.fill()
+  // Filled dot
+  ctx.beginPath(); ctx.arc(mx, my, 10, 0, 2 * Math.PI)
+  ctx.fillStyle = markerColor; ctx.fill()
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.5; ctx.stroke()
+  // Inner white dot
+  ctx.beginPath(); ctx.arc(mx, my, 3.5, 0, 2 * Math.PI)
+  ctx.fillStyle = '#ffffff'; ctx.fill()
+
+  // Crop to horizontal strip centered on marker
+  const cropY = Math.max(0, Math.min(Math.round(markerPy - STRIP_H / 2), TS * G - STRIP_H))
+  const out = document.createElement('canvas')
+  out.width = TS * G; out.height = STRIP_H
+  out.getContext('2d').drawImage(canvas, 0, cropY, TS * G, STRIP_H, 0, 0, TS * G, STRIP_H)
+  return out.toDataURL('image/jpeg', 0.88)
 }
 
 function Resizer() {
@@ -533,181 +599,267 @@ function SitePanel({ selected, onClose }) {
   async function exportPDF() {
     const doc = new jsPDF({ unit: 'pt', format: 'letter' })
     const L = 55, R = 557, W = R - L
-    let y = 95
+    let y = 0
 
-    function addSection(title) {
-      if (y > 650) { doc.addPage(); y = 60 }
-      doc.setFontSize(8); doc.setFont('helvetica', 'bold')
-      doc.setTextColor(150, 150, 150)
-      doc.text(title.toUpperCase(), L, y); y += 6
-      doc.setDrawColor(220, 220, 220); doc.setLineWidth(0.5)
-      doc.line(L, y, R, y); y += 12
+    // ── Fetch logo + map image in parallel ──────────────────────────
+    const siteLat = edesig?.lat ?? oer?.lat
+    const siteLng = edesig?.lng ?? oer?.lng
+    const markerHex = edesig ? edesigColor(edesig) : (oer ? oerColor(oer) : '#888888')
+    const [logoDataUrl, mapDataUrl] = await Promise.all([
+      fetch('/logo.png').then(r => r.blob()).then(b => new Promise(res => {
+        const rd = new FileReader(); rd.onload = e => res(e.target.result); rd.readAsDataURL(b)
+      })).catch(() => null),
+      (siteLat != null && siteLng != null)
+        ? fetchMapTileImage(siteLat, siteLng, markerHex).catch(() => null)
+        : Promise.resolve(null),
+    ])
+
+    // ── Layout helpers ───────────────────────────────────────────────
+    function checkPage(needed = 24) {
+      if (y + needed > 752) { doc.addPage(); y = 60 }
     }
 
-    function addPara(text, size = 10, color = [50, 50, 50]) {
-      if (y > 650) { doc.addPage(); y = 60 }
-      doc.setFontSize(size); doc.setFont('helvetica', 'normal')
+    function sectionHeader(title, accentRgb = [26, 26, 46]) {
+      checkPage(32)
+      y += 8
+      doc.setFillColor(...accentRgb)
+      doc.rect(L, y, 3, 11, 'F')
+      doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(...accentRgb)
+      doc.text(title.toUpperCase(), L + 9, y + 9)
+      y += 14
+      doc.setDrawColor(225, 228, 235); doc.setLineWidth(0.4)
+      doc.line(L, y, R, y)
+      y += 10
+    }
+
+    function addPara(text, size = 9.5, color = [55, 65, 81], bold = false, indent = 0) {
+      checkPage(20)
+      doc.setFontSize(size)
+      doc.setFont('helvetica', bold ? 'bold' : 'normal')
       doc.setTextColor(...color)
-      const lines = doc.splitTextToSize(text, W)
-      doc.text(lines, L, y)
-      y += lines.length * (size * 1.4) + 6
+      const lines = doc.splitTextToSize(text, W - indent)
+      doc.text(lines, L + indent, y)
+      y += lines.length * (size * 1.42) + 5
     }
 
-    function addRow(label, value) {
-      if (y > 670) { doc.addPage(); y = 60 }
-      doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(120, 120, 120)
-      doc.text(label, L, y)
-      doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 30)
-      const lines = doc.splitTextToSize(String(value), W - 160)
-      doc.text(lines, L + 155, y)
-      y += Math.max(lines.length * 13, 14)
+    function addRow(label, value, rowIdx) {
+      if (!value || String(value).trim() === '' || value === '—' || value === 'N/A') return
+      const valLines = doc.splitTextToSize(String(value), W - 152)
+      const rh = Math.max(valLines.length * 13, 16)
+      checkPage(rh + 2)
+      if (rowIdx % 2 === 0) {
+        doc.setFillColor(247, 249, 253)
+        doc.rect(L - 2, y - 11, W + 4, rh, 'F')
+      }
+      doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(120, 128, 145)
+      doc.text(label, L + 2, y)
+      doc.setFont('helvetica', 'normal'); doc.setTextColor(28, 32, 42)
+      doc.text(valLines, L + 150, y)
+      y += rh
     }
 
-    // Load logo as base64
-    let logoDataUrl = null
-    try {
-      const resp = await fetch('/logo.png')
-      const blob = await resp.blob()
-      logoDataUrl = await new Promise(res => {
-        const reader = new FileReader()
-        reader.onload = e => res(e.target.result)
-        reader.readAsDataURL(blob)
-      })
-    } catch (_) {}
-
-    // Header bar
+    // ── HEADER ──────────────────────────────────────────────────────
     doc.setFillColor(26, 26, 46)
-    doc.rect(0, 0, 612, 80, 'F')
+    doc.rect(0, 0, 612, 84, 'F')
+    doc.setFillColor(52, 152, 219)
+    doc.rect(0, 84, 612, 3, 'F')
 
-    // Logo top-left
-    if (logoDataUrl) {
-      doc.addImage(logoDataUrl, 'PNG', L, 12, 52, 52)
-    }
+    if (logoDataUrl) doc.addImage(logoDataUrl, 'PNG', L, 17, 48, 48)
+    const titleX = logoDataUrl ? L + 58 : L
 
-    // Title text — offset right of logo
-    const titleX = logoDataUrl ? L + 62 : L
-    doc.setFontSize(15); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
-    const title = edesig ? `E-Designation Site Report — ${edesig.enumber}` : `OER Cleanup Site Report`
-    doc.text(title, titleX, 30)
-    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(170, 170, 170)
-    const sub = edesig
-      ? `${borough} · BBL ${edesig.bbl} · Generated ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`
-      : `${borough} · ${oer?.project_name} · Generated ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`
-    doc.text(sub, titleX, 46)
-    doc.setFontSize(8); doc.setTextColor(120, 120, 120)
-    doc.text('Impact Environmental · impactenvironmental.com', titleX, 60)
+    doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
+    doc.text(edesig ? 'E-Designation Site Report' : 'OER Cleanup Site Report', titleX, 34)
 
-    if (oer) {
-      doc.setFontSize(9); doc.setFont('helvetica', 'bold')
-      doc.setFillColor(...(isActive ? [155,89,182] : [22,160,133]))
-      const tag = isActive ? 'OER ACTIVE' : 'OER COMPLETED'
-      const tagX = R - doc.getTextWidth(tag) - 22
-      doc.roundedRect(tagX, 58, doc.getTextWidth(tag) + 14, 14, 2, 2, 'F')
-      doc.setTextColor(255,255,255); doc.text(tag, tagX + 7, 68)
-    }
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(155, 168, 192)
+    doc.text(edesig
+      ? `${edesig.enumber}  ·  ${borough}  ·  BBL ${edesig.bbl}`
+      : `${oer?.project_name ?? '—'}  ·  ${borough}`,
+      titleX, 49)
 
-    // Regulatory info
-    addSection('Property & Regulatory Information')
+    doc.setFontSize(7.5); doc.setTextColor(95, 108, 130)
+    doc.text(`Impact Environmental  ·  impactenvironmental.com  ·  ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, titleX, 63)
+
+    // Designation pills — right-aligned
+    let pillX = R
+    const hPills = []
+    if (oer) hPills.push({ label: isActive ? 'OER ACTIVE' : 'OER DONE', hex: isActive ? '#9b59b6' : '#16a085' })
     if (edesig) {
-      addRow('E-Designation', edesig.enumber)
-      addRow('Borough', borough)
-      addRow('BBL', edesig.bbl)
-      addRow('Block / Lot', `${edesig.taxblock} / ${edesig.taxlot}`)
-      addRow('Effective Date', fmt(edesig.effective_date))
-      addRow('CEQR Number', edesig.ceqr_num || '—')
-      addRow('ULURP Number', edesig.ulurp_num || '—')
-      addRow('Zoning Map', edesig.zoning_map || '—')
+      if (isTrue(edesig.noise_code))  hPills.push({ label: 'NOISE',  hex: edesig.noise_date  ? '#27ae60' : '#3498db' })
+      if (isTrue(edesig.air_code))    hPills.push({ label: 'AIR',    hex: edesig.air_date    ? '#27ae60' : '#e67e22' })
+      if (isTrue(edesig.hazmat_code)) hPills.push({ label: 'HAZMAT', hex: edesig.hazmat_date ? '#27ae60' : '#e74c3c' })
+    }
+    hPills.forEach(({ label, hex }) => {
+      doc.setFontSize(7); doc.setFont('helvetica', 'bold')
+      const pw = doc.getTextWidth(label) + 12
+      pillX -= (pw + 5)
+      doc.setFillColor(...hexToRgb(hex))
+      doc.roundedRect(pillX, 52, pw, 14, 3, 3, 'F')
+      doc.setTextColor(255, 255, 255)
+      doc.text(label, pillX + 6, 62)
+    })
+
+    y = 100
+
+    // ── SITE LOCATION MAP ────────────────────────────────────────────
+    if (mapDataUrl) {
+      sectionHeader('Site Location')
+      const mW = W, mH = 184
+      checkPage(mH + 20)
+      doc.setDrawColor(205, 212, 225); doc.setLineWidth(0.5)
+      doc.rect(L - 1, y - 1, mW + 2, mH + 2)
+      doc.addImage(mapDataUrl, 'JPEG', L, y, mW, mH)
+      doc.setFontSize(6.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(160, 160, 160)
+      doc.text('Map data © OpenStreetMap contributors', R - 2, y + mH - 5, { align: 'right' })
+      y += mH + 18
+    }
+
+    // ── PROPERTY & REGULATORY INFORMATION ───────────────────────────
+    sectionHeader('Property & Regulatory Information')
+    const propRows = []
+    if (edesig) {
+      propRows.push(['E-Designation No.', edesig.enumber])
+      propRows.push(['Borough', borough])
+      propRows.push(['BBL', edesig.bbl])
+      propRows.push(['Block / Lot', `${edesig.taxblock} / ${edesig.taxlot}`])
+      propRows.push(['Effective Date', fmt(edesig.effective_date)])
+      propRows.push(['CEQR Number', edesig.ceqr_num])
+      propRows.push(['ULURP Number', edesig.ulurp_num])
+      propRows.push(['Zoning Map', edesig.zoning_map])
     }
     if (oer) {
-      addRow('OER Project #', oer.oer_project_numbers || '—')
-      addRow('Project Name', oer.project_name || '—')
-      addRow('Address', `${oer.street_number || ''} ${oer.street_name || ''}, ${oer.borough}`.trim())
-      addRow('OER Program', oer.oer_program || '—')
-      addRow('Status', oer.class || '—')
-      addRow('Phase', oer.phase || '—')
-      addRow('Neighborhood', oer.nta_name || '—')
+      propRows.push(['OER Project No.', oer.oer_project_numbers])
+      propRows.push(['Project Name', oer.project_name])
+      propRows.push(['Address', [oer.street_number, oer.street_name, oer.borough].filter(Boolean).join(' ')])
+      propRows.push(['OER Program', oer.oer_program])
+      propRows.push(['Status', oer.class])
+      propRows.push(['Phase', oer.phase])
+      propRows.push(['Neighborhood', oer.nta_name])
+      propRows.push(['Zip Code', oer.zip_code])
+      if (siteLat != null) propRows.push(['Coordinates', `${siteLat.toFixed(5)}, ${siteLng.toFixed(5)}`])
     }
-    y += 4
+    propRows.forEach(([label, value], i) => addRow(label, value, i))
+    y += 8
 
-    // E-designation narrative
+    // ── ENVIRONMENTAL DESIGNATION STATUS ────────────────────────────
+    if (edesig && eTypes.length > 0) {
+      sectionHeader('Environmental Designation Status')
+      const pdfTypes = [
+        { key: 'hazmat', label: 'Hazardous Materials', rgb: [231, 76, 60] },
+        { key: 'air',    label: 'Air Quality',         rgb: [230, 126, 34] },
+        { key: 'noise',  label: 'Noise',               rgb: [52, 152, 219] },
+      ].filter(t => isTrue(edesig[`${t.key}_code`]))
+      pdfTypes.forEach(({ key, label, rgb }) => {
+        const remDate = edesig[`${key}_date`]
+        checkPage(26)
+        const light = rgb.map(c => Math.round(c * 0.1 + 255 * 0.9))
+        doc.setFillColor(...light); doc.rect(L, y - 11, W, 18, 'F')
+        doc.setFillColor(...rgb);   doc.rect(L, y - 11, 4, 18, 'F')
+        doc.setFontSize(9.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(...rgb)
+        doc.text(label, L + 10, y)
+        const statusLabel = remDate ? `Remediated  ${fmt(remDate)}` : 'ACTIVE'
+        const pillRgb = remDate ? [39, 174, 96] : rgb
+        doc.setFontSize(7.5); doc.setFont('helvetica', 'bold')
+        const pw = doc.getTextWidth(statusLabel) + 14
+        doc.setFillColor(...pillRgb)
+        doc.roundedRect(R - pw, y - 9, pw, 13, 2, 2, 'F')
+        doc.setTextColor(255, 255, 255); doc.text(statusLabel, R - pw + 6, y)
+        y += 20
+      })
+      y += 4
+    }
+
+    // ── ENVIRONMENTAL ASSESSMENT NARRATIVE ──────────────────────────
     if (narrative.length > 0) {
-      addSection('Environmental Assessment Narrative')
-      narrative.forEach(p => { addPara(p); y += 4 })
+      sectionHeader('Environmental Assessment Narrative')
+      narrative.forEach((p, i) => {
+        if (i === 0) {
+          doc.setFontSize(9.5); doc.setFont('helvetica', 'normal')
+          const lines = doc.splitTextToSize(p, W - 16)
+          const bh = lines.length * (9.5 * 1.42) + 16
+          checkPage(bh + 8)
+          doc.setFillColor(240, 245, 255); doc.rect(L, y - 10, W, bh, 'F')
+          doc.setFillColor(52, 152, 219);  doc.rect(L, y - 10, 3, bh, 'F')
+          doc.setTextColor(38, 50, 80)
+          doc.text(lines, L + 9, y + 2)
+          y += bh + 8
+        } else {
+          addPara(p); y += 3
+        }
+      })
     }
 
-    // OER context
+    // ── OER CLEANUP SITE CONTEXT ─────────────────────────────────────
     if (oer) {
-      addSection('OER Cleanup Site Context')
+      const oerRgb = isActive ? [155, 89, 182] : [22, 160, 133]
+      sectionHeader('OER Cleanup Site Context', oerRgb)
       oerPrograms.forEach(prog => {
         const key = Object.keys(OER_PROGRAMS).find(k => prog.includes(k))
-        if (key) {
-          addPara(`${OER_PROGRAMS[key].label}:`, 10, [60,60,60])
-          y -= 4
-          addPara(OER_PROGRAMS[key].desc, 10, [80,80,80])
-          y += 4
-        }
+        if (!key) return
+        addPara(`${OER_PROGRAMS[key].label}:`, 9.5, [50, 50, 70], true)
+        y -= 4
+        addPara(OER_PROGRAMS[key].desc, 9.5, [70, 80, 95], false, 8)
+        y += 2
       })
       const phaseKey = Object.keys(OER_PHASES).find(k => oer.phase?.includes(k))
       if (phaseKey) {
-        addPara(`Current Phase — ${phaseKey}:`, 10, [60,60,60])
+        addPara(`Current Phase — ${phaseKey}:`, 9.5, [50, 50, 70], true)
         y -= 4
-        addPara(OER_PHASES[phaseKey], 10, [80,80,80])
+        addPara(OER_PHASES[phaseKey], 9.5, [70, 80, 95], false, 8)
       }
-      addPara('For contaminants of concern and detailed remedial actions, refer to the project documents in the OER EPIC repository (link below).', 10, [120,120,120])
+      addPara('For contaminants of concern and detailed remedial action documentation, refer to the OER EPIC project documents (link below).', 9, [130, 135, 150])
     }
 
-    // Document links
-    addSection('Environmental Review Documents & References')
-    doc.setFontSize(9); doc.setFont('helvetica', 'normal')
+    // ── DOCUMENT REFERENCES ──────────────────────────────────────────
+    sectionHeader('Environmental Review Documents & References')
     const links = []
-    if (edesig?.ceqr_num) links.push([`CEQR/FEIS Documents (${edesig.ceqr_num})`, `https://a002-ceqhome.nyc.gov/search/search.aspx?ceqrnum=${encodeURIComponent(edesig.ceqr_num)}`])
-    if (oer?.epicUrl) links.push(['OER EPIC Project Documents (Contaminants & Remedial Actions)', oer.epicUrl])
-    if (edesig) links.push(['NYC ZoLa Zoning Map', `https://zola.planning.nyc.gov/?bbl=${edesig.bbl}`])
-    if (edesig) links.push(['ACRIS Property Records', `https://a836-acris.nyc.gov/DS/DocumentSearch/BBLResult?hid_borough=${edesig.borocode}&hid_block=${edesig.taxblock}&hid_lot=${edesig.taxlot}&hid_SearchType=BBL`])
+    if (edesig?.ceqr_num) links.push([`CEQR / FEIS Documents  (${edesig.ceqr_num})`, `https://a002-ceqhome.nyc.gov/search/search.aspx?ceqrnum=${encodeURIComponent(edesig.ceqr_num)}`])
+    if (oer?.epicUrl)     links.push(['OER EPIC Project Documents  (Contaminants & Remedial Actions)', oer.epicUrl])
+    if (edesig)           links.push(['NYC ZoLa — Zoning & Land Use Map', `https://zola.planning.nyc.gov/?bbl=${edesig.bbl}`])
+    if (edesig)           links.push(['ACRIS Property Records', `https://a836-acris.nyc.gov/DS/DocumentSearch/BBLResult?hid_borough=${edesig.borocode}&hid_block=${edesig.taxblock}&hid_lot=${edesig.taxlot}&hid_SearchType=BBL`])
     links.push(['NYC OER E-Designation Program', 'https://www.nyc.gov/site/oer/remediation/e-designation.page'])
     links.forEach(([label, url]) => {
-      if (y > 720) { doc.addPage(); y = 60 }
-      doc.setTextColor(26,110,168); doc.setFontSize(9)
-      doc.textWithLink(`${label}: ${url}`, L, y, { url })
-      y += 16
+      checkPage(34)
+      doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(28, 95, 155)
+      doc.text(label, L + 4, y)
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(65, 120, 175)
+      doc.textWithLink(url, L + 12, y + 12, { url })
+      y += 28
     })
 
-    // Marketing footer block on last page
-    if (y > 580) { doc.addPage(); y = 60 }
-    else { y += 16 }
-
+    // ── MARKETING BLOCK ──────────────────────────────────────────────
     const { headline, body, cta } = buildMarketingContent(edesig, oer)
+    if (y > 580) { doc.addPage(); y = 60 }
+    else { y += 14 }
 
-    doc.setFillColor(26, 26, 46)
-    doc.rect(0, y, 612, 145, 'F')
-    const fy = y
+    const mBodyLines = doc.splitTextToSize(body, W - 60)
+    const mBlockH = Math.max(130, mBodyLines.length * (9 * 1.35) + 68)
+    if (y + mBlockH > 762) { doc.addPage(); y = 60 }
 
+    doc.setFillColor(26, 26, 46); doc.rect(0, y, 612, mBlockH, 'F')
+    doc.setFillColor(52, 152, 219); doc.rect(0, y, 612, 2.5, 'F')
+    const fy = y + 2
     if (logoDataUrl) doc.addImage(logoDataUrl, 'PNG', L, fy + 10, 44, 44)
     const mx = logoDataUrl ? L + 54 : L
-
     doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
-    doc.text(headline, mx, fy + 22)
-
-    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(200, 200, 200)
-    const mLines = doc.splitTextToSize(body, W - (logoDataUrl ? 54 : 0))
-    doc.text(mLines, mx, fy + 36)
-
+    doc.text(headline, mx, fy + 24)
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(185, 195, 215)
+    doc.text(mBodyLines, mx, fy + 38)
     doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
-    doc.text(cta, L, fy + 108)
-    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(150, 200, 255)
-    doc.textWithLink('www.impactenvironmental.com', L, fy + 122, { url: 'https://impactenvironmental.com/' })
+    doc.text(cta, L, fy + mBlockH - 28)
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(105, 175, 255)
+    doc.textWithLink('www.impactenvironmental.com', L, fy + mBlockH - 14, { url: 'https://impactenvironmental.com/' })
 
-    // Page footers
+    // ── PAGE FOOTERS ─────────────────────────────────────────────────
     const total = doc.getNumberOfPages()
     for (let i = 1; i <= total; i++) {
       doc.setPage(i)
-      doc.setFontSize(7); doc.setTextColor(180, 180, 180); doc.setFont('helvetica', 'normal')
-      doc.text(`Impact Environmental · NYC Environmental Site Report · Page ${i} of ${total}`, L, 792)
-      doc.text('Data: NYC Open Data (OER E-Designations, OER Cleanup Sites, MapPLUTO) · For informational use only', R, 792, { align: 'right' })
+      doc.setFillColor(243, 244, 247); doc.rect(0, 778, 612, 14, 'F')
+      doc.setFontSize(6.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(170, 175, 185)
+      doc.text(`Impact Environmental  ·  NYC Environmental Site Report  ·  Page ${i} of ${total}`, L, 787)
+      doc.text('Data: NYC Open Data (OER E-Designations, OER Cleanup Sites, MapPLUTO)  ·  For informational use only', R, 787, { align: 'right' })
     }
 
-    const fname = edesig ? `EDesig_${edesig.enumber}_BBL${edesig.bbl}.pdf` : `OER_${(oer.project_name || 'site').replace(/\s+/g,'_')}.pdf`
-    doc.save(fname)
+    doc.save(edesig ? `EDesig_${edesig.enumber}_BBL${edesig.bbl}.pdf` : `OER_${(oer.project_name || 'site').replace(/\s+/g, '_')}.pdf`)
   }
 
   return (
