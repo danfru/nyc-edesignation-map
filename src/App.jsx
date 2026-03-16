@@ -829,7 +829,7 @@ function SitePanel({ selected, onClose }) {
     // ── MARKETING BLOCK — anchored to bottom of last page ───────────
     const { headline, body, cta } = buildMarketingContent(edesig, oer)
     const mBodyLines = doc.splitTextToSize(body, W - 60)
-    const mBlockH = Math.max(130, mBodyLines.length * (9 * 1.35) + 68)
+    const mBlockH = Math.max(145, mBodyLines.length * (9 * 1.35) + 82)
 
     // If the block won't fit below current content, push to a new page
     if (y + mBlockH > 778) doc.addPage()
@@ -846,9 +846,20 @@ function SitePanel({ selected, onClose }) {
     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(185, 195, 215)
     doc.text(mBodyLines, mx, fy + 38)
     doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
-    doc.text(cta, L, fy + mBlockH - 28)
+    doc.text(cta, L, fy + mBlockH - 42)
     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(105, 175, 255)
-    doc.textWithLink('www.impactenvironmental.com', L, fy + mBlockH - 14, { url: 'https://impactenvironmental.com/' })
+    doc.textWithLink('www.impactenvironmental.com', L, fy + mBlockH - 28, { url: 'https://impactenvironmental.com/' })
+    doc.setFontSize(8.5); doc.setTextColor(160, 185, 220)
+    doc.text('Reach out to us with questions: ', L, fy + mBlockH - 13)
+    const reachW = doc.getTextWidth('Reach out to us with questions: ')
+    doc.setTextColor(105, 175, 255)
+    doc.textWithLink('kkleaka@impactenvironmental.com', L + reachW, fy + mBlockH - 13, { url: 'mailto:kkleaka@impactenvironmental.com' })
+    const email1W = doc.getTextWidth('kkleaka@impactenvironmental.com')
+    doc.setTextColor(160, 185, 220)
+    doc.text(' or ', L + reachW + email1W, fy + mBlockH - 13)
+    const orW = doc.getTextWidth(' or ')
+    doc.setTextColor(105, 175, 255)
+    doc.textWithLink('gmendez-chicas@impactenvironmental.com', L + reachW + email1W + orW, fy + mBlockH - 13, { url: 'mailto:gmendez-chicas@impactenvironmental.com' })
 
     // ── PAGE FOOTERS ─────────────────────────────────────────────────
     const total = doc.getNumberOfPages()
