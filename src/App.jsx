@@ -402,13 +402,13 @@ function SitePanel({ selected, onClose }) {
   const oerStatusColor = oer ? (isActive ? '#9b59b6' : '#16a085') : null
   const oerPrograms = oer?.oer_program?.split(',').map(p => p.trim()) || []
 
-  function exportPDF() {
+  async function exportPDF() {
     const doc = new jsPDF({ unit: 'pt', format: 'letter' })
     const L = 55, R = 557, W = R - L
-    let y = 90
+    let y = 95
 
     function addSection(title) {
-      if (y > 680) { doc.addPage(); y = 60 }
+      if (y > 650) { doc.addPage(); y = 60 }
       doc.setFontSize(8); doc.setFont('helvetica', 'bold')
       doc.setTextColor(150, 150, 150)
       doc.text(title.toUpperCase(), L, y); y += 6
@@ -417,7 +417,7 @@ function SitePanel({ selected, onClose }) {
     }
 
     function addPara(text, size = 10, color = [50, 50, 50]) {
-      if (y > 690) { doc.addPage(); y = 60 }
+      if (y > 650) { doc.addPage(); y = 60 }
       doc.setFontSize(size); doc.setFont('helvetica', 'normal')
       doc.setTextColor(...color)
       const lines = doc.splitTextToSize(text, W)
@@ -426,7 +426,7 @@ function SitePanel({ selected, onClose }) {
     }
 
     function addRow(label, value) {
-      if (y > 710) { doc.addPage(); y = 60 }
+      if (y > 670) { doc.addPage(); y = 60 }
       doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(120, 120, 120)
       doc.text(label, L, y)
       doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 30, 30)
@@ -435,21 +435,47 @@ function SitePanel({ selected, onClose }) {
       y += Math.max(lines.length * 13, 14)
     }
 
-    // Header
+    // Load logo as base64
+    let logoDataUrl = null
+    try {
+      const resp = await fetch('/logo.png')
+      const blob = await resp.blob()
+      logoDataUrl = await new Promise(res => {
+        const reader = new FileReader()
+        reader.onload = e => res(e.target.result)
+        reader.readAsDataURL(blob)
+      })
+    } catch (_) {}
+
+    // Header bar
     doc.setFillColor(26, 26, 46)
-    doc.rect(0, 0, 612, 75, 'F')
-    doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
+    doc.rect(0, 0, 612, 80, 'F')
+
+    // Logo top-left
+    if (logoDataUrl) {
+      doc.addImage(logoDataUrl, 'PNG', L, 12, 52, 52)
+    }
+
+    // Title text — offset right of logo
+    const titleX = logoDataUrl ? L + 62 : L
+    doc.setFontSize(15); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
     const title = edesig ? `E-Designation Site Report — ${edesig.enumber}` : `OER Cleanup Site Report`
-    doc.text(title, L, 32)
-    doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.setTextColor(170, 170, 170)
-    const sub = edesig ? `${borough} · BBL ${edesig.bbl} · Generated ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}` : `${borough} · ${oer?.project_name}`
-    doc.text(sub, L, 52)
+    doc.text(title, titleX, 30)
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(170, 170, 170)
+    const sub = edesig
+      ? `${borough} · BBL ${edesig.bbl} · Generated ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`
+      : `${borough} · ${oer?.project_name} · Generated ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`
+    doc.text(sub, titleX, 46)
+    doc.setFontSize(8); doc.setTextColor(120, 120, 120)
+    doc.text('Impact Environmental · impactenvironmental.com', titleX, 60)
+
     if (oer) {
       doc.setFontSize(9); doc.setFont('helvetica', 'bold')
       doc.setFillColor(...(isActive ? [155,89,182] : [22,160,133]))
       const tag = isActive ? 'OER ACTIVE' : 'OER COMPLETED'
-      doc.roundedRect(L, 58, doc.getTextWidth(tag) + 14, 13, 2, 2, 'F')
-      doc.setTextColor(255,255,255); doc.text(tag, L + 7, 68)
+      const tagX = R - doc.getTextWidth(tag) - 22
+      doc.roundedRect(tagX, 58, doc.getTextWidth(tag) + 14, 14, 2, 2, 'F')
+      doc.setTextColor(255,255,255); doc.text(tag, tagX + 7, 68)
     }
 
     // Regulatory info
@@ -518,12 +544,37 @@ function SitePanel({ selected, onClose }) {
       y += 16
     })
 
-    // Footer
-    for (let i = 1; i <= doc.getNumberOfPages(); i++) {
+    // Marketing footer block on last page
+    if (y > 580) { doc.addPage(); y = 60 }
+    else { y += 16 }
+
+    doc.setFillColor(26, 26, 46)
+    doc.rect(0, y, 612, 145, 'F')
+    const fy = y
+
+    if (logoDataUrl) doc.addImage(logoDataUrl, 'PNG', L, fy + 10, 44, 44)
+    const mx = logoDataUrl ? L + 54 : L
+
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
+    doc.text('Is This Property Ready for Development?', mx, fy + 22)
+
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(200, 200, 200)
+    const marketingText = 'E-Designations and OER cleanup sites do not have to be obstacles to development — they can be opportunities. Whether you are a developer, property owner, or prospective purchaser, Impact Environmental has the expertise to guide you through the NYC OER Voluntary Cleanup Program (VCP), E-Designation compliance, Phase I/II Environmental Site Assessments, Remedial Action Plans, and the full CEQR environmental review process. Our team of licensed professionals has successfully managed remediation programs across all five boroughs, turning environmentally burdened sites into productive, permit-ready properties.'
+    const mLines = doc.splitTextToSize(marketingText, W - (logoDataUrl ? 54 : 0))
+    doc.text(mLines, mx, fy + 36)
+
+    doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
+    doc.text('Contact Impact Environmental today for a free site consultation.', L, fy + 108)
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(150, 200, 255)
+    doc.textWithLink('www.impactenvironmental.com', L, fy + 122, { url: 'https://impactenvironmental.com/' })
+
+    // Page footers
+    const total = doc.getNumberOfPages()
+    for (let i = 1; i <= total; i++) {
       doc.setPage(i)
-      doc.setFontSize(7.5); doc.setTextColor(180,180,180); doc.setFont('helvetica','normal')
-      doc.text(`Impact Environmental · NYC Environmental Site Report · Page ${i} of ${doc.getNumberOfPages()}`, L, 785)
-      doc.text('Source: NYC Open Data (OER E-Designations, OER Cleanup Sites, MapPLUTO) · For informational use only', R, 785, { align: 'right' })
+      doc.setFontSize(7); doc.setTextColor(180, 180, 180); doc.setFont('helvetica', 'normal')
+      doc.text(`Impact Environmental · NYC Environmental Site Report · Page ${i} of ${total}`, L, 792)
+      doc.text('Data: NYC Open Data (OER E-Designations, OER Cleanup Sites, MapPLUTO) · For informational use only', R, 792, { align: 'right' })
     }
 
     const fname = edesig ? `EDesig_${edesig.enumber}_BBL${edesig.bbl}.pdf` : `OER_${(oer.project_name || 'site').replace(/\s+/g,'_')}.pdf`
@@ -566,7 +617,7 @@ function SitePanel({ selected, onClose }) {
       <div style={{ padding: '16px 20px', flex: 1 }}>
 
         {/* Export */}
-        <button onClick={exportPDF} style={{ width: '100%', padding: '10px', marginBottom: 20, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 13, fontWeight: 600, letterSpacing: 0.2 }}>
+        <button onClick={() => exportPDF()} style={{ width: '100%', padding: '10px', marginBottom: 20, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 13, fontWeight: 600, letterSpacing: 0.2 }}>
           ⬇ Export Site Report (PDF)
         </button>
 
