@@ -66,6 +66,134 @@ function buildNarrative(site, borough) {
   return paras
 }
 
+function buildMarketingContent(edesig, oer) {
+  const hasHazmat = edesig && isTrue(edesig.hazmat_code)
+  const hasAir    = edesig && isTrue(edesig.air_code)
+  const hasNoise  = edesig && isTrue(edesig.noise_code)
+  const hazmatRem = edesig?.hazmat_date
+  const airRem    = edesig?.air_date
+  const noiseRem  = edesig?.noise_date
+
+  const activeHazmat = hasHazmat && !hazmatRem
+  const activeAir    = hasAir    && !airRem
+  const activeNoise  = hasNoise  && !noiseRem
+  const anyActiveEdesig = activeHazmat || activeAir || activeNoise
+  const allEdesigRemediated = edesig && !anyActiveEdesig
+
+  const oerActive    = oer && oer.class?.includes('Active')
+  const oerCompleted = oer && !oerActive
+  const oerPhase     = oer?.phase || ''
+  const oerPrograms  = oer?.oer_program?.split(',').map(p => p.trim()) || []
+  const isVCP        = oerPrograms.some(p => p.includes('VCP'))
+  const isBCP        = oerPrograms.some(p => p.includes('BCP'))
+
+  const services = []
+  const audiences = []
+
+  // Active E-designation services
+  if (activeHazmat) {
+    services.push('Phase I/II Environmental Site Assessment (ESA)')
+    services.push('Remedial Action Plan (RAP) preparation and OER/NYSDEC submission')
+    services.push('NYC OER Voluntary Cleanup Program (VCP) enrollment and oversight')
+    audiences.push('developers and owners who need to satisfy the hazardous materials E-Designation before a building permit can be issued')
+  }
+  if (activeAir) {
+    services.push('CEQR air quality analysis and impact modeling')
+    services.push('Mitigation design — filtration systems, sealed facades, and alternate ventilation specifications')
+    audiences.push('developers who need air quality mitigation measures approved by OER as a condition of permit')
+  }
+  if (activeNoise) {
+    services.push('CEQR noise impact analysis to 45/50 dBA (Ldn) interior standards')
+    services.push('Noise attenuation specifications — glazing, wall assemblies, and HVAC systems')
+    audiences.push('developers who must demonstrate noise compliance under CEQR Technical Manual standards before receiving a building permit')
+  }
+
+  // Remediated E-designation services
+  if (allEdesigRemediated) {
+    services.push('CEQR compliance verification and E-Designation closure documentation')
+    audiences.push('owners and developers confirming that prior E-Designation requirements have been fully satisfied')
+  }
+
+  // Active OER services
+  if (oerActive) {
+    if (oerPhase.includes('Remedial Investigation')) {
+      services.push('Remedial Investigation (RI) oversight and quality assurance')
+      services.push('Sampling program design and laboratory data review')
+      audiences.push('responsible parties and developers engaged in or overseeing the active site investigation')
+    }
+    if (oerPhase.includes('Approved Remedial Plan')) {
+      services.push('Remedial Action Plan implementation oversight and contractor management')
+      services.push('Construction quality assurance and health and safety plan (HASP) preparation')
+      audiences.push('property owners and developers managing active soil or groundwater remediation')
+    }
+    if (oerPhase.includes('Site Management')) {
+      services.push('Long-term monitoring program design and institutional/engineering controls review')
+      services.push('Land Use Control (LUC) covenant compliance monitoring')
+      audiences.push('owners managing post-remediation site conditions and institutional control obligations')
+    }
+    if (oerPhase.includes('Closure')) {
+      services.push('Closure Report preparation and OER submission')
+      services.push('Certificate of Completion / Notice of Satisfaction support')
+      audiences.push('responsible parties approaching the finish line of the remediation program')
+    }
+    if (isVCP) services.push('NYC OER Voluntary Cleanup Program (VCP) application, negotiation, and milestone management')
+    if (isBCP) services.push('NYS DEC Brownfield Cleanup Program (BCP) enrollment, track selection, and tax credit maximization')
+  }
+
+  // Completed OER services
+  if (oerCompleted) {
+    services.push('Development readiness confirmation and post-remediation due diligence')
+    services.push('Review of site management obligations, institutional controls, and deed restrictions')
+    audiences.push('prospective purchasers, developers, and lenders conducting environmental due diligence on a remediated property')
+  }
+
+  // Fallback for OER-only sites with no clear phase
+  if (oer && services.length === 0) {
+    services.push('Environmental due diligence and Phase I/II ESA')
+    services.push('NYC OER program advisory and coordination services')
+    audiences.push('owners, developers, and prospective purchasers evaluating environmental liability at this OER-listed site')
+  }
+
+  // Generic fallback
+  if (services.length === 0) {
+    services.push('Phase I/II Environmental Site Assessment (ESA)')
+    services.push('E-Designation compliance consulting and CEQR review support')
+    audiences.push('owners, developers, and prospective purchasers navigating NYC environmental requirements')
+  }
+
+  // Build headline
+  let headline = 'Environmental Services for This Site'
+  if (edesig && oer) {
+    headline = anyActiveEdesig ? 'Active E-Designation + OER Site — Let Impact Environmental Clear the Path' : 'E-Designation & OER Site — Confirm Compliance, Accelerate Development'
+  } else if (edesig && anyActiveEdesig) {
+    headline = 'Active E-Designation — Impact Environmental Can Get You to Permit'
+  } else if (edesig && allEdesigRemediated) {
+    headline = 'Remediated E-Designation — Verify Compliance and Move Forward'
+  } else if (oer && oerCompleted) {
+    headline = 'Remediation Complete — Due Diligence and Development Services Available'
+  } else if (oer && oerActive) {
+    headline = 'Active OER Remediation — Advisory and Oversight Services Available'
+  }
+
+  // Build body
+  const audienceStr = audiences.length > 0
+    ? `This site represents a specific opportunity for ${audiences[0]}.`
+    : 'This site presents environmental compliance requirements that Impact Environmental is positioned to address.'
+
+  const serviceList = [...new Set(services)].slice(0, 5).map(s => `• ${s}`).join('  ')
+
+  const body = `${audienceStr} Impact Environmental provides the following services directly relevant to this site: ${serviceList}. Our licensed professionals have successfully guided projects through the NYC OER, NYSDEC, and CEQR processes across all five boroughs — turning environmental obligations into development-ready outcomes.`
+
+  // Build CTA
+  const cta = oerActive
+    ? 'Contact Impact Environmental for a site-specific remediation strategy consultation.'
+    : anyActiveEdesig
+      ? 'Contact Impact Environmental to begin your E-Designation compliance program today.'
+      : 'Contact Impact Environmental to confirm site status and support your next transaction or permit application.'
+
+  return { headline, body, cta }
+}
+
 function Resizer() {
   const map = useMap()
   useEffect(() => { map.invalidateSize() }, [map])
@@ -548,6 +676,8 @@ function SitePanel({ selected, onClose }) {
     if (y > 580) { doc.addPage(); y = 60 }
     else { y += 16 }
 
+    const { headline, body, cta } = buildMarketingContent(edesig, oer)
+
     doc.setFillColor(26, 26, 46)
     doc.rect(0, y, 612, 145, 'F')
     const fy = y
@@ -556,15 +686,14 @@ function SitePanel({ selected, onClose }) {
     const mx = logoDataUrl ? L + 54 : L
 
     doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
-    doc.text('Is This Property Ready for Development?', mx, fy + 22)
+    doc.text(headline, mx, fy + 22)
 
     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(200, 200, 200)
-    const marketingText = 'E-Designations and OER cleanup sites do not have to be obstacles to development — they can be opportunities. Whether you are a developer, property owner, or prospective purchaser, Impact Environmental has the expertise to guide you through the NYC OER Voluntary Cleanup Program (VCP), E-Designation compliance, Phase I/II Environmental Site Assessments, Remedial Action Plans, and the full CEQR environmental review process. Our team of licensed professionals has successfully managed remediation programs across all five boroughs, turning environmentally burdened sites into productive, permit-ready properties.'
-    const mLines = doc.splitTextToSize(marketingText, W - (logoDataUrl ? 54 : 0))
+    const mLines = doc.splitTextToSize(body, W - (logoDataUrl ? 54 : 0))
     doc.text(mLines, mx, fy + 36)
 
     doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
-    doc.text('Contact Impact Environmental today for a free site consultation.', L, fy + 108)
+    doc.text(cta, L, fy + 108)
     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(150, 200, 255)
     doc.textWithLink('www.impactenvironmental.com', L, fy + 122, { url: 'https://impactenvironmental.com/' })
 
