@@ -826,14 +826,15 @@ function SitePanel({ selected, onClose }) {
       y += 28
     })
 
-    // ── MARKETING BLOCK ──────────────────────────────────────────────
+    // ── MARKETING BLOCK — anchored to bottom of last page ───────────
     const { headline, body, cta } = buildMarketingContent(edesig, oer)
-    if (y > 580) { doc.addPage(); y = 60 }
-    else { y += 14 }
-
     const mBodyLines = doc.splitTextToSize(body, W - 60)
     const mBlockH = Math.max(130, mBodyLines.length * (9 * 1.35) + 68)
-    if (y + mBlockH > 762) { doc.addPage(); y = 60 }
+
+    // If the block won't fit below current content, push to a new page
+    if (y + mBlockH > 778) doc.addPage()
+    // Always pin to the very bottom of whichever page it lands on
+    y = 778 - mBlockH
 
     doc.setFillColor(26, 26, 46); doc.rect(0, y, 612, mBlockH, 'F')
     doc.setFillColor(52, 152, 219); doc.rect(0, y, 612, 2.5, 'F')
