@@ -533,7 +533,7 @@ export default function App() {
               onKeyDown={e => e.key === 'Escape' && (setSearchQuery(''), setSearchResults([]))}
               style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: '#fff', fontSize: 13, padding: '7px 0' }}
             />
-            {searchQuery && <span onClick={() => { setSearchQuery(''); setSearchResults([]) }} style={{ color: '#555', cursor: 'pointer', fontSize: 13 }}>✕</span>}
+            {searchQuery && <span onClick={() => { setSearchQuery(''); setSearchResults([]) }} style={{ color: '#cbbba0', cursor: 'pointer', fontSize: 13 }}>✕</span>}
           </div>
           {searchResults.length > 0 && (
             <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#f5f0e8', borderRadius: 4, boxShadow: '0 6px 24px rgba(68,55,23,0.25)', border: '1px solid #cbbba0', zIndex: 2000, marginTop: 4, overflow: 'hidden' }}>
@@ -557,7 +557,7 @@ export default function App() {
               {edesigSites.length.toLocaleString()} E-desig · {oerSites.length.toLocaleString()} OER · {remSites.length.toLocaleString()} Remediation
             </span>
           )}
-          {(status === 'loading' || status === 'error') && <span style={{ fontSize: 11, color: status === 'error' ? '#e74c3c' : '#aaa' }}>{message}</span>}
+          {(status === 'loading' || status === 'error') && <span style={{ fontSize: 11, color: status === 'error' ? '#bd562d' : '#cbbba0' }}>{message}</span>}
           {status === 'done' && (
             <button onClick={refreshData} style={{ background: 'none', border: '1px solid rgba(227,113,21,0.5)', color: '#cbbba0', padding: '3px 10px', borderRadius: 3, cursor: 'pointer', fontSize: 11, fontFamily: "'Barlow', sans-serif", letterSpacing: 0.5, textTransform: 'uppercase' }}>
               Refresh
@@ -576,7 +576,7 @@ export default function App() {
             {/* NYSDEC Remediation rings — behind everything */}
             {remSites.map((site, i) => (
               <CircleMarker key={`rem-${i}`} center={[site.lat, site.lng]} radius={8}
-                pathOptions={{ fillColor: '#c0392b', color: '#c0392b', weight: 1.5, fillOpacity: 0.12, opacity: 0.55 }}
+                pathOptions={{ fillColor: '#bd562d', color: '#bd562d', weight: 1.5, fillOpacity: 0.12, opacity: 0.55 }}
                 eventHandlers={{ click: () => setSelected({ type: 'rem', edesig: null, oer: null, rem: site, nearbyRem: [] }) }}
               >
                 <Tooltip>{site.site_name || 'NYSDEC Remediation Site'}</Tooltip>
@@ -674,7 +674,7 @@ export default function App() {
             <div style={{ position: 'absolute', inset: 0, background: 'rgba(68,55,23,0.97)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 600 }}>
               <div style={{ fontSize: 32, marginBottom: 16 }}>⚠️</div>
               <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Failed to Load Data</div>
-              <div style={{ fontSize: 13, color: '#e74c3c', marginBottom: 20, maxWidth: 400, textAlign: 'center' }}>{message}</div>
+              <div style={{ fontSize: 13, color: '#bd562d', marginBottom: 20, maxWidth: 400, textAlign: 'center' }}>{message}</div>
               <button onClick={refreshData} style={{ padding: '10px 24px', background: '#e37115', color: '#fff', border: 'none', borderRadius: 3, cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: "'Barlow', sans-serif", letterSpacing: 0.8, textTransform: 'uppercase' }}>Try Again</button>
             </div>
           )}
@@ -784,7 +784,7 @@ function SitePanel({ selected, onClose }) {
     // ── Fetch logo + map image in parallel ──────────────────────────
     const siteLat = edesig?.lat ?? oer?.lat ?? rem?.lat
     const siteLng = edesig?.lng ?? oer?.lng ?? rem?.lng
-    const markerHex = edesig ? edesigColor(edesig) : (oer ? oerColor(oer) : '#c0392b')
+    const markerHex = edesig ? edesigColor(edesig) : (oer ? oerColor(oer) : '#bd562d')
     const [logoDataUrl, mapDataUrl] = await Promise.all([
       fetch('/logo.png').then(r => r.blob()).then(b => new Promise(res => {
         const rd = new FileReader(); rd.onload = e => res(e.target.result); rd.readAsDataURL(b)
@@ -1157,7 +1157,7 @@ function SitePanel({ selected, onClose }) {
             </span>
           )}
           {rem && (
-            <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: '#c0392b', color: '#fff' }}>
+            <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: '#bd562d', color: '#fff' }}>
               {rem.program_type || 'Remediation'} · Class {rem.siteclass || '—'}
             </span>
           )}
@@ -1176,14 +1176,14 @@ function SitePanel({ selected, onClose }) {
         {rem && (() => {
           const cls = REM_SITE_CLASSES[rem.siteclass]
           const ptLabel = REM_PROGRAM_TYPES[rem.program_type] || rem.program_type
-          const clsColor = ['1','2'].includes(rem.siteclass) ? '#c0392b' : ['3'].includes(rem.siteclass) ? '#e67e22' : ['4','5','C'].includes(rem.siteclass) ? '#27ae60' : '#888'
+          const clsColor = ['1','2'].includes(rem.siteclass) ? '#bd562d' : ['3'].includes(rem.siteclass) ? '#e37115' : ['4','5','C'].includes(rem.siteclass) ? '#96a153' : '#a8a198'
           return (
           <>
           <PanelSection title="NYSDEC Remediation Site Details">
             <div style={{ background: '#faf5f0', border: '1px solid rgba(189,86,45,0.25)', borderLeft: '3px solid #bd562d', borderRadius: 3, padding: '14px 16px', marginBottom: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                 <div>
-                  <div style={{ fontSize: 10, color: '#c0392b', fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 3 }}>{ptLabel}</div>
+                  <div style={{ fontSize: 10, color: '#bd562d', fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 3 }}>{ptLabel}</div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#2c2c2c' }}>{rem.site_name}</div>
                   <div style={{ fontSize: 12, color: '#777', marginTop: 3 }}>{rem.address}{rem.locality ? `, ${rem.locality}` : ''}</div>
                 </div>
@@ -1198,8 +1198,8 @@ function SitePanel({ selected, onClose }) {
 
             {rem.contaminants && (
               <div style={{ background: '#faf5e8', border: '1px solid rgba(186,135,72,0.3)', borderLeft: '3px solid #ba8748', borderRadius: 3, padding: '10px 14px', marginBottom: 12 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#e67e22', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>Contaminants of Concern</div>
-                <div style={{ fontSize: 12, color: '#555', lineHeight: 1.6 }}>{rem.contaminants}</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#ba8748', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>Contaminants of Concern</div>
+                <div style={{ fontSize: 12, color: '#323e4c', lineHeight: 1.6 }}>{rem.contaminants}</div>
               </div>
             )}
 
@@ -1304,15 +1304,15 @@ function SitePanel({ selected, onClose }) {
         {/* Designation status */}
         {eTypes.length > 0 && <PanelSection title="Designation Status">
           {[
-            { key: 'hazmat', label: 'Hazardous Materials', color: '#e74c3c' },
-            { key: 'air',    label: 'Air Quality',          color: '#e67e22' },
-            { key: 'noise',  label: 'Noise',                color: '#3498db' },
+            { key: 'hazmat', label: 'Hazardous Materials', color: '#bd562d' },
+            { key: 'air',    label: 'Air Quality',          color: '#e37115' },
+            { key: 'noise',  label: 'Noise',                color: '#185676' },
           ].filter(t => edesig && isTrue(edesig[`${t.key}_code`])).map(t => {
             const remDate = edesig[`${t.key}_date`] ? fmt(edesig[`${t.key}_date`]) : null
             return (
               <div key={t.key} style={{ borderLeft: `4px solid ${t.color}`, background: t.color + '0d', borderRadius: '0 3px 3px 0', padding: '9px 12px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontWeight: 700, color: t.color, fontSize: 13 }}>{t.label}</span>
-                <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 9px', borderRadius: 10, background: remDate ? '#27ae60' : t.color, color: '#fff' }}>
+                <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 9px', borderRadius: 10, background: remDate ? '#96a153' : t.color, color: '#fff' }}>
                   {remDate ? `Remediated ${remDate}` : 'ACTIVE'}
                 </span>
               </div>
@@ -1372,11 +1372,11 @@ function SitePanel({ selected, onClose }) {
           <PanelSection title={`NYSDEC Remediation Sites Within ¼ Mile (${nearbyRem.length})`}>
             {nearbyRem.map((s, i) => {
               const cls = REM_SITE_CLASSES[s.siteclass]
-              const clsColor = ['1','2'].includes(s.siteclass) ? '#c0392b' : ['3'].includes(s.siteclass) ? '#e67e22' : ['4','5','C'].includes(s.siteclass) ? '#27ae60' : '#888'
+              const clsColor = ['1','2'].includes(s.siteclass) ? '#bd562d' : ['3'].includes(s.siteclass) ? '#e37115' : ['4','5','C'].includes(s.siteclass) ? '#96a153' : '#a8a198'
               return (
                 <div key={i} style={{ background: '#faf5f0', border: '1px solid rgba(189,86,45,0.2)', borderLeft: '3px solid #bd562d', borderRadius: 3, padding: '10px 12px', marginBottom: 8 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                    <div style={{ fontWeight: 700, fontSize: 12, color: '#c0392b' }}>{s.site_name || '—'}</div>
+                    <div style={{ fontWeight: 700, fontSize: 12, color: '#bd562d' }}>{s.site_name || '—'}</div>
                     {cls && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 8, background: clsColor, color: '#fff', flexShrink: 0, marginLeft: 8 }}>{cls.label}</span>}
                   </div>
                   <InfoTable rows={[
@@ -1386,7 +1386,7 @@ function SitePanel({ selected, onClose }) {
                   ].filter(r => r[1])} />
                   <a href={`https://extapps.dec.ny.gov/data/DecDocs/${s.program_number}/`}
                     target="_blank" rel="noreferrer"
-                    style={{ display: 'inline-block', marginTop: 6, fontSize: 11, color: '#c0392b', textDecoration: 'none', fontWeight: 600 }}>
+                    style={{ display: 'inline-block', marginTop: 6, fontSize: 11, color: '#bd562d', textDecoration: 'none', fontWeight: 600 }}>
                     View NYSDEC Site Documents →
                   </a>
                 </div>
