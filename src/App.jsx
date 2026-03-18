@@ -1030,13 +1030,14 @@ function SitePanel({ selected, onClose }) {
     if (edesig?.ceqr_num) links.push([`CEQR / FEIS Documents  (${edesig.ceqr_num})`, `https://a002-ceqhome.nyc.gov/search/search.aspx?ceqrnum=${encodeURIComponent(edesig.ceqr_num)}`])
     if (oer?.epicUrl)     links.push(['OER EPIC Project Documents  (Contaminants & Remedial Actions)', oer.epicUrl])
     if (rem?.program_number) {
-      links.push([`NYSDEC Site Record  (Program #${rem.program_number})`, `https://www.dec.ny.gov/cfmx/extapps/derpreview/index.cfm?pageid=3&derp_id=${rem.program_number}`])
-      links.push([`NYSDEC Document Repository  (Program #${rem.program_number})`, `https://www.dec.ny.gov/cfmx/extapps/derdms/index.cfm?pageid=3&program_id=${rem.program_number}`])
+      links.push([`NYSDEC Site Documents  (Program #${rem.program_number})`, `https://extapps.dec.ny.gov/data/DecDocs/${rem.program_number}/`])
+      links.push(['NYSDEC Environmental Remediation Database Search', 'https://appfactory.dec.ny.gov/DERExternalSearch/ERDSearch'])
     }
     if (edesig)           links.push(['NYC ZoLa — Zoning & Land Use Map', `https://zola.planning.nyc.gov/?bbl=${edesig.bbl}`])
     if (remBbl)           links.push(['NYC ZoLa — Zoning & Land Use Map', `https://zola.planning.nyc.gov/?bbl=${remBbl}`])
     if (edesig)           links.push(['ACRIS Property Records', `https://a836-acris.nyc.gov/DS/DocumentSearch/BBLResult?hid_borough=${edesig.borocode}&hid_block=${edesig.taxblock}&hid_lot=${edesig.taxlot}&hid_SearchType=BBL`])
-    if (rem)              links.push(['NYSDEC Environmental Remediation Program', 'https://www.dec.ny.gov/chemical/8438.html'])
+    if (remBbl)           links.push(['ACRIS Property Records', `https://a836-acris.nyc.gov/DS/DocumentSearch/BBLResult?hid_borough=${remBbl[0]}&hid_block=${String(parseInt(remBbl.slice(1,6)))}&hid_lot=${String(parseInt(remBbl.slice(6,10)))}&hid_SearchType=BBL`])
+    if (rem)              links.push(['NYSDEC Site Cleanup Program', 'https://dec.ny.gov/environmental-protection/site-cleanup'])
     else                  links.push(['NYC OER E-Designation Program', 'https://www.nyc.gov/site/oer/remediation/e-designation.page'])
     links.forEach(([label, url]) => {
       checkPage(34)
@@ -1181,11 +1182,11 @@ function SitePanel({ selected, onClose }) {
             )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-              <ExtLink href={`https://www.dec.ny.gov/cfmx/extapps/derpreview/index.cfm?pageid=3&derp_id=${rem.program_number}`} color="#c0392b">NYSDEC Site Record →</ExtLink>
-              <ExtLink href={`https://www.dec.ny.gov/cfmx/extapps/derdms/index.cfm?pageid=3&program_id=${rem.program_number}`} color="#c0392b">NYSDEC Document Repository →</ExtLink>
-              <ExtLink href="https://www.dec.ny.gov/chemical/8438.html" color="#888">NYSDEC Remediation Program Info →</ExtLink>
+              <ExtLink href={`https://extapps.dec.ny.gov/data/DecDocs/${rem.program_number}/`} color="#c0392b">NYSDEC Site Documents →</ExtLink>
+              <ExtLink href="https://appfactory.dec.ny.gov/DERExternalSearch/ERDSearch" color="#c0392b">NYSDEC Remediation Database Search →</ExtLink>
+              <ExtLink href="https://dec.ny.gov/environmental-protection/site-cleanup" color="#888">NYSDEC Site Cleanup Program →</ExtLink>
               {remBbl && <ExtLink href={`https://zola.planning.nyc.gov/?bbl=${remBbl}`} color="#1a6ea8">NYC ZoLa Zoning Map →</ExtLink>}
-              {remBbl && <ExtLink href={`https://a836-acris.nyc.gov/DS/DocumentSearch/BBLResult?hid_SearchType=BBL`} color="#555">ACRIS Property Records →</ExtLink>}
+              {remBbl && <ExtLink href={`https://a836-acris.nyc.gov/DS/DocumentSearch/BBLResult?hid_borough=${remBbl[0]}&hid_block=${String(parseInt(remBbl.slice(1,6)))}&hid_lot=${String(parseInt(remBbl.slice(6,10)))}&hid_SearchType=BBL`} color="#555">ACRIS Property Records →</ExtLink>}
             </div>
           </PanelSection>
 
@@ -1323,7 +1324,7 @@ function SitePanel({ selected, onClose }) {
             {edesig && <ExtLink href={`https://zola.planning.nyc.gov/?bbl=${edesig.bbl}`} color="#1a6ea8">NYC ZoLa Zoning Map →</ExtLink>}
             {edesig && <ExtLink href={`https://a836-acris.nyc.gov/DS/DocumentSearch/BBLResult?hid_borough=${edesig.borocode}&hid_block=${edesig.taxblock}&hid_lot=${edesig.taxlot}&hid_SearchType=BBL`} color="#555">ACRIS Property Records →</ExtLink>}
             <ExtLink href="https://www.nyc.gov/site/oer/remediation/e-designation.page" color="#16a085">NYC OER E-Designation Info →</ExtLink>
-            <ExtLink href="https://www.nyc.gov/site/oer/remediation/cleanup-program.page" color="#16a085">NYC OER Cleanup Program →</ExtLink>
+            <ExtLink href="https://www.nyc.gov/site/oer/remediation/voluntary-cleanup.page" color="#16a085">NYC OER Cleanup Program →</ExtLink>
           </div>
         </PanelSection>
 
@@ -1362,10 +1363,10 @@ function SitePanel({ selected, onClose }) {
                     ['Address', s.address],
                     ['Contaminants', s.contaminants],
                   ].filter(r => r[1])} />
-                  <a href={`https://www.dec.ny.gov/cfmx/extapps/derpreview/index.cfm?pageid=3&derp_id=${s.program_number}`}
+                  <a href={`https://extapps.dec.ny.gov/data/DecDocs/${s.program_number}/`}
                     target="_blank" rel="noreferrer"
                     style={{ display: 'inline-block', marginTop: 6, fontSize: 11, color: '#c0392b', textDecoration: 'none', fontWeight: 600 }}>
-                    View NYSDEC Site Record →
+                    View NYSDEC Site Documents →
                   </a>
                 </div>
               )
