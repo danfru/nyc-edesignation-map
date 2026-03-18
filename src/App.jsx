@@ -770,6 +770,16 @@ function SitePanel({ selected, onClose }) {
   const oerStatusColor = oer ? (isActive ? '#9b59b6' : '#16a085') : null
   const oerPrograms = oer?.oer_program?.split(',').map(p => p.trim()) || []
 
+  function openCeqr(ceqrNum) {
+    const form = document.createElement('form')
+    form.method = 'POST'
+    form.action = `https://a002-ceqraccess.nyc.gov/ceqr/?ceqrnum=${encodeURIComponent(ceqrNum)}`
+    form.target = '_blank'
+    document.body.appendChild(form)
+    form.submit()
+    document.body.removeChild(form)
+  }
+
   async function exportPDF() {
     const doc = new jsPDF({ unit: 'pt', format: 'letter' })
     const L = 55, R = 557, W = R - L
@@ -1272,11 +1282,10 @@ function SitePanel({ selected, onClose }) {
             <div style={{ fontSize: 12, color: '#555', lineHeight: 1.5, marginBottom: 10 }}>
               The Final Environmental Impact Statement (FEIS) and all associated CEQR review documents are accessible through the NYC CEQR document search portal.
             </div>
-            <a href={`https://a002-ceqraccess.nyc.gov/ceqr/?ceqrnum=${encodeURIComponent(edesig.ceqr_num)}`}
-              target="_blank" rel="noreferrer"
-              style={{ display: 'block', padding: '9px', background: '#7d3c98', color: '#fff', borderRadius: 5, fontSize: 12, fontWeight: 600, textDecoration: 'none', textAlign: 'center' }}>
+            <button onClick={() => openCeqr(edesig.ceqr_num)}
+              style={{ display: 'block', width: '100%', padding: '9px', background: '#7d3c98', color: '#fff', borderRadius: 5, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', textAlign: 'center' }}>
               Search CEQR Documents for {edesig.ceqr_num} →
-            </a>
+            </button>
           </div>
         </PanelSection>}
 
