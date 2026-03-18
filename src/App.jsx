@@ -799,15 +799,15 @@ function SitePanel({ selected, onClose }) {
       if (y + needed > 752) { doc.addPage(); y = 60 }
     }
 
-    function sectionHeader(title, accentRgb = [26, 26, 46]) {
+    function sectionHeader(title, accentRgb = [163, 85, 29]) {
       checkPage(32)
       y += 8
       doc.setFillColor(...accentRgb)
-      doc.rect(L, y, 3, 11, 'F')
+      doc.rect(L, y, 4, 12, 'F')
       doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(...accentRgb)
-      doc.text(title.toUpperCase(), L + 9, y + 9)
-      y += 14
-      doc.setDrawColor(225, 228, 235); doc.setLineWidth(0.4)
+      doc.text(title.toUpperCase(), L + 11, y + 9)
+      y += 15
+      doc.setDrawColor(203, 187, 160); doc.setLineWidth(0.5)
       doc.line(L, y, R, y)
       y += 10
     }
@@ -828,21 +828,26 @@ function SitePanel({ selected, onClose }) {
       const rh = Math.max(valLines.length * 13, 16)
       checkPage(rh + 2)
       if (rowIdx % 2 === 0) {
-        doc.setFillColor(247, 249, 253)
+        doc.setFillColor(245, 240, 232)
         doc.rect(L - 2, y - 11, W + 4, rh, 'F')
       }
-      doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(120, 128, 145)
+      doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(168, 161, 152)
       doc.text(label, L + 2, y)
-      doc.setFont('helvetica', 'normal'); doc.setTextColor(28, 32, 42)
+      doc.setFont('helvetica', 'normal'); doc.setTextColor(50, 62, 76)
       doc.text(valLines, L + 150, y)
       y += rh
     }
 
     // ── HEADER ──────────────────────────────────────────────────────
-    doc.setFillColor(26, 26, 46)
+    doc.setFillColor(68, 55, 23)
     doc.rect(0, 0, 612, 84, 'F')
-    doc.setFillColor(52, 152, 219)
-    doc.rect(0, 84, 612, 3, 'F')
+    // Diagonal stripe overlay
+    doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.3); doc.setGState(new doc.GState({ opacity: 0.04 }))
+    for (let sx = -80; sx < 680; sx += 10) { doc.line(sx, 0, sx + 84, 84) }
+    doc.setGState(new doc.GState({ opacity: 1 }))
+    // Orange accent bar
+    doc.setFillColor(227, 113, 21)
+    doc.rect(0, 84, 612, 4, 'F')
 
     if (logoDataUrl) doc.addImage(logoDataUrl, 'PNG', L, 17, 48, 48)
     const titleX = logoDataUrl ? L + 58 : L
@@ -851,7 +856,7 @@ function SitePanel({ selected, onClose }) {
     const reportTitle = edesig ? 'E-Designation Site Report' : rem ? 'NYSDEC Remediation Site Report' : 'OER Cleanup Site Report'
     doc.text(reportTitle, titleX, 34)
 
-    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(155, 168, 192)
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(203, 187, 160)
     const subLine = edesig
       ? `${edesig.enumber}  ·  ${borough}  ·  BBL ${edesig.bbl}`
       : rem
@@ -859,7 +864,7 @@ function SitePanel({ selected, onClose }) {
         : `${oer?.project_name ?? '—'}  ·  ${borough}`
     doc.text(subLine, titleX, 49)
 
-    doc.setFontSize(7.5); doc.setTextColor(95, 108, 130)
+    doc.setFontSize(7.5); doc.setTextColor(186, 135, 72)
     doc.text(`Impact Environmental  ·  impactenvironmental.com  ·  ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, titleX, 63)
 
     // Designation pills — right-aligned
@@ -888,7 +893,7 @@ function SitePanel({ selected, onClose }) {
       sectionHeader('Site Location')
       const mW = W, mH = 184
       checkPage(mH + 20)
-      doc.setDrawColor(205, 212, 225); doc.setLineWidth(0.5)
+      doc.setDrawColor(203, 187, 160); doc.setLineWidth(0.5)
       doc.rect(L - 1, y - 1, mW + 2, mH + 2)
       doc.addImage(mapDataUrl, 'JPEG', L, y, mW, mH)
       doc.setFontSize(6.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(160, 160, 160)
@@ -972,9 +977,9 @@ function SitePanel({ selected, onClose }) {
           const lines = doc.splitTextToSize(p, W - 16)
           const bh = lines.length * (9.5 * 1.42) + 16
           checkPage(bh + 8)
-          doc.setFillColor(240, 245, 255); doc.rect(L, y - 10, W, bh, 'F')
-          doc.setFillColor(52, 152, 219);  doc.rect(L, y - 10, 3, bh, 'F')
-          doc.setTextColor(38, 50, 80)
+          doc.setFillColor(245, 238, 228); doc.rect(L, y - 10, W, bh, 'F')
+          doc.setFillColor(227, 113, 21);  doc.rect(L, y - 10, 4, bh, 'F')
+          doc.setTextColor(50, 62, 76)
           doc.text(lines, L + 9, y + 2)
           y += bh + 8
         } else {
@@ -990,33 +995,33 @@ function SitePanel({ selected, onClose }) {
       oerPrograms.forEach(prog => {
         const key = Object.keys(OER_PROGRAMS).find(k => prog.includes(k))
         if (!key) return
-        addPara(`${OER_PROGRAMS[key].label}:`, 9.5, [50, 50, 70], true)
+        addPara(`${OER_PROGRAMS[key].label}:`, 9.5, [84, 48, 26], true)
         y -= 4
-        addPara(OER_PROGRAMS[key].desc, 9.5, [70, 80, 95], false, 8)
+        addPara(OER_PROGRAMS[key].desc, 9.5, [100, 85, 70], false, 8)
         y += 2
       })
       const phaseKey = Object.keys(OER_PHASES).find(k => oer.phase?.includes(k))
       if (phaseKey) {
-        addPara(`Current Phase — ${phaseKey}:`, 9.5, [50, 50, 70], true)
+        addPara(`Current Phase — ${phaseKey}:`, 9.5, [84, 48, 26], true)
         y -= 4
-        addPara(OER_PHASES[phaseKey], 9.5, [70, 80, 95], false, 8)
+        addPara(OER_PHASES[phaseKey], 9.5, [100, 85, 70], false, 8)
       }
-      addPara('For contaminants of concern and detailed remedial action documentation, refer to the OER EPIC project documents (link below).', 9, [130, 135, 150])
+      addPara('For contaminants of concern and detailed remedial action documentation, refer to the OER EPIC project documents (link below).', 9, [168, 145, 120])
     }
 
     // ── NYSDEC REMEDIATION CONTEXT ───────────────────────────────────
     if (rem) {
       sectionHeader('NYSDEC Remediation Site Context', [192, 57, 43])
       const ptDesc = REM_PROGRAM_TYPES[rem.program_type]
-      if (ptDesc) { addPara(`Program Type — ${ptDesc}:`, 9.5, [50, 50, 70], true); y -= 4 }
+      if (ptDesc) { addPara(`Program Type — ${ptDesc}:`, 9.5, [84, 48, 26], true); y -= 4 }
       const cls = REM_SITE_CLASSES[rem.siteclass]
-      if (cls) { addPara(`${cls.label}: ${cls.desc}`, 9.5, [70, 80, 95], false, 8); y += 4 }
+      if (cls) { addPara(`${cls.label}: ${cls.desc}`, 9.5, [100, 85, 70], false, 8); y += 4 }
       if (rem.contaminants) {
-        addPara('Contaminants of Concern:', 9.5, [50, 50, 70], true); y -= 4
-        addPara(rem.contaminants, 9.5, [70, 80, 95], false, 8); y += 4
+        addPara('Contaminants of Concern:', 9.5, [84, 48, 26], true); y -= 4
+        addPara(rem.contaminants, 9.5, [100, 85, 70], false, 8); y += 4
       }
       if (remPluto) {
-        addPara('Property Data (MapPLUTO):', 9.5, [50, 50, 70], true); y -= 4
+        addPara('Property Data (MapPLUTO):', 9.5, [84, 48, 26], true); y -= 4
         const pRows = [
           ['Zoning', remPluto.zonedist1],
           ['Land Use', remPluto.landuse ? `${remPluto.landuse} — ${LAND_USE[remPluto.landuse] || ''}` : null],
@@ -1045,13 +1050,15 @@ function SitePanel({ selected, onClose }) {
     if (remBbl)           links.push(['ACRIS Property Records', `https://a836-acris.nyc.gov/DS/DocumentSearch/BBLResult?hid_borough=${remBbl[0]}&hid_block=${String(parseInt(remBbl.slice(1,6)))}&hid_lot=${String(parseInt(remBbl.slice(6,10)))}&hid_SearchType=BBL`])
     if (rem)              links.push(['NYSDEC Site Cleanup Program', 'https://dec.ny.gov/environmental-protection/site-cleanup'])
     else                  links.push(['NYC OER E-Designation Program', 'https://www.nyc.gov/site/oer/remediation/e-designation.page'])
-    links.forEach(([label, url]) => {
+    links.forEach(([label, url], i) => {
       checkPage(34)
-      doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(28, 95, 155)
-      doc.text(label, L + 4, y)
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(65, 120, 175)
-      doc.textWithLink(url, L + 12, y + 12, { url })
-      y += 28
+      if (i % 2 === 0) { doc.setFillColor(245, 240, 232); doc.rect(L - 2, y - 11, W + 4, 30, 'F') }
+      doc.setFillColor(227, 113, 21); doc.rect(L - 2, y - 11, 3, 30, 'F')
+      doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(84, 48, 26)
+      doc.text(label, L + 7, y)
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(163, 85, 29)
+      doc.textWithLink(url, L + 15, y + 12, { url })
+      y += 30
     })
 
     // ── MARKETING BLOCK — anchored to bottom of last page ───────────
@@ -1064,37 +1071,38 @@ function SitePanel({ selected, onClose }) {
     // Always pin to the very bottom of whichever page it lands on
     y = 778 - mBlockH
 
-    doc.setFillColor(26, 26, 46); doc.rect(0, y, 612, mBlockH, 'F')
-    doc.setFillColor(52, 152, 219); doc.rect(0, y, 612, 2.5, 'F')
-    const fy = y + 2
+    doc.setFillColor(68, 55, 23); doc.rect(0, y, 612, mBlockH, 'F')
+    doc.setFillColor(227, 113, 21); doc.rect(0, y, 612, 4, 'F')
+    const fy = y + 4
     if (logoDataUrl) doc.addImage(logoDataUrl, 'PNG', L, fy + 10, 44, 44)
     const mx = logoDataUrl ? L + 54 : L
     doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
     doc.text(headline, mx, fy + 24)
-    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(185, 195, 215)
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(203, 187, 160)
     doc.text(mBodyLines, mx, fy + 38)
-    doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
+    doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(227, 113, 21)
     doc.text(cta, L, fy + mBlockH - 42)
-    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(105, 175, 255)
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(186, 135, 72)
     doc.textWithLink('www.impactenvironmental.com', L, fy + mBlockH - 28, { url: 'https://impactenvironmental.com/' })
-    doc.setFontSize(8.5); doc.setTextColor(160, 185, 220)
+    doc.setFontSize(8.5); doc.setTextColor(203, 187, 160)
     doc.text('Reach out to us with questions: ', L, fy + mBlockH - 13)
     const reachW = doc.getTextWidth('Reach out to us with questions: ')
-    doc.setTextColor(105, 175, 255)
+    doc.setTextColor(186, 135, 72)
     doc.textWithLink('kkleaka@impactenvironmental.com', L + reachW, fy + mBlockH - 13, { url: 'mailto:kkleaka@impactenvironmental.com' })
     const email1W = doc.getTextWidth('kkleaka@impactenvironmental.com')
-    doc.setTextColor(160, 185, 220)
+    doc.setTextColor(203, 187, 160)
     doc.text(' or ', L + reachW + email1W, fy + mBlockH - 13)
     const orW = doc.getTextWidth(' or ')
-    doc.setTextColor(105, 175, 255)
+    doc.setTextColor(186, 135, 72)
     doc.textWithLink('gmendez-chicas@impactenvironmental.com', L + reachW + email1W + orW, fy + mBlockH - 13, { url: 'mailto:gmendez-chicas@impactenvironmental.com' })
 
     // ── PAGE FOOTERS ─────────────────────────────────────────────────
     const total = doc.getNumberOfPages()
     for (let i = 1; i <= total; i++) {
       doc.setPage(i)
-      doc.setFillColor(243, 244, 247); doc.rect(0, 778, 612, 14, 'F')
-      doc.setFontSize(6.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(170, 175, 185)
+      doc.setFillColor(245, 240, 232); doc.rect(0, 778, 612, 14, 'F')
+      doc.setFillColor(227, 113, 21); doc.rect(0, 778, 612, 1.5, 'F')
+      doc.setFontSize(6.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(123, 118, 109)
       doc.text(`Impact Environmental  ·  NYC Environmental Site Report  ·  Page ${i} of ${total}`, L, 787)
       doc.text('Data: NYC Open Data (OER E-Designations, OER Cleanup Sites, MapPLUTO)  ·  For informational use only', R, 787, { align: 'right' })
     }
