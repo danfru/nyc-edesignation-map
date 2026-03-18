@@ -304,6 +304,7 @@ export default function App() {
   const [searchQuery, setSearchQuery]   = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [flyTarget, setFlyTarget]       = useState(null)
+  const [progress, setProgress]         = useState(0)
   const searchRef = useRef(null)
 
   useEffect(() => { loadAll() }, [])
@@ -321,118 +322,76 @@ export default function App() {
     }
 
     setStatus('loading')
+    setProgress(0)
+
+    async function fetchAllPages(baseUrl) {
+      let results = [], off = 0
+      while (true) {
+        const r = await fetch(`${baseUrl}&$offset=${off}`)
+        const chunk = await r.json()
+        results = results.concat(chunk)
+        if (chunk.length < 1000) break
+        off += 1000
+      }
+      return results
+    }
 
     try {
       // --- E-designations ---
       setMessage('Fetching E-designation records...')
-      let edesig = []
-      let offset = 0
-      while (true) {
-        const r = await fetch(`${E_URL}?$limit=1000&$offset=${offset}&$order=bbl`)
-        const chunk = await r.json()
-        edesig = edesig.concat(chunk)
-        if (chunk.length < 1000) break
-        offset += 1000
-      }
+      let edesig = await fetchAllPages(`${E_URL}?$limit=1000&$order=bbl`)
+      setProgress(10)
 
-      // --- PLUTO geocoding ---
+      // --- PLUTO geocoding (8 concurrent batches) ---
       setMessage(`Geocoding ${edesig.length} E-designation lots...`)
       const bbls = [...new Set(edesig.map(r => r.bbl).filter(Boolean))]
       const coordMap = {}
-      const BATCH = 150
-      for (let i = 0; i < bbls.length; i += BATCH) {
-        const batch = bbls.slice(i, i + BATCH)
-        const inClause = batch.map(b => `'${b}.00000000'`).join(',')
-        const url = `${PLUTO_URL}?$select=bbl,latitude,longitude&$where=${encodeURIComponent(`bbl in(${inClause})`)}&$limit=${BATCH}`
-        const rows = await (await fetch(url)).json()
-        rows.forEach(row => {
-          if (row.latitude && row.longitude) {
-            coordMap[String(Math.round(parseFloat(row.bbl)))] = {
-              lat: parseFloat(row.latitude), lng: parseFloat(row.longitude),
-            }
-          }
-        })
-        setMessage(`Geocoded ${Math.min(i + BATCH, bbls.length)} / ${bbls.length} lots...`)
+      const BATCH = 150, CONCURRENCY = 8
+      const batches = []
+      for (let i = 0; i < bbls.length; i += BATCH) batches.push(bbls.slice(i, i + BATCH))
+      let completedBatches = 0
+      for (let i = 0; i < batches.length; i += CONCURRENCY) {
+        await Promise.all(batches.slice(i, i + CONCURRENCY).map(async batch => {
+          const inClause = batch.map(b => `'${b}.00000000'`).join(',')
+          const url = `${PLUTO_URL}?$select=bbl,latitude,longitude&$where=${encodeURIComponent(`bbl in(${inClause})`)}&$limit=${BATCH}`
+          const rows = await (await fetch(url)).json()
+          rows.forEach(row => {
+            if (row.latitude && row.longitude)
+              coordMap[String(Math.round(parseFloat(row.bbl)))] = { lat: parseFloat(row.latitude), lng: parseFloat(row.longitude) }
+          })
+          completedBatches++
+          setProgress(10 + Math.round((completedBatches / batches.length) * 45))
+          setMessage(`Geocoded ${Math.min(completedBatches * BATCH, bbls.length)} / ${bbls.length} lots...`)
+        }))
       }
-      edesig = edesig.map(s => {
-        const c = coordMap[s.bbl]
-        return c ? { ...s, lat: c.lat, lng: c.lng } : null
-      }).filter(Boolean)
+      edesig = edesig.map(s => { const c = coordMap[s.bbl]; return c ? { ...s, ...c } : null }).filter(Boolean)
+      setProgress(55)
 
-      // --- OER sites ---
-      setMessage('Fetching OER cleanup sites...')
-      let oer = []
-      offset = 0
-      while (true) {
-        const r = await fetch(`${OER_URL}?$limit=1000&$offset=${offset}&$order=project_name`)
-        const chunk = await r.json()
-        oer = oer.concat(chunk)
-        if (chunk.length < 1000) break
-        offset += 1000
-      }
-      oer = oer.filter(s => s.latitude && s.longitude).map(s => ({
-        ...s,
-        lat: parseFloat(s.latitude),
-        lng: parseFloat(s.longitude),
+      // --- OER + Spills + Remediation in parallel ---
+      setMessage('Fetching OER, Spills & Remediation data in parallel...')
+      const [oerRaw, spillsRaw, remRaw] = await Promise.all([
+        fetchAllPages(`${OER_URL}?$limit=1000&$order=project_name`),
+        fetchAllPages(`${SPILLS_URL}?$where=${encodeURIComponent(NYC_COUNTIES)}&$limit=1000&$order=spill_number&$select=spill_number,county,spill_date,facility,material_1,quantity_1,unit_1,status,cause,latitude,longitude`),
+        fetchAllPages(`${REMEDIATION_URL}?$where=${encodeURIComponent(NYC_COUNTIES)}&$limit=1000&$order=site_name&$select=dec_id,site_name,county,address_1,town,zip,program_type,site_class,latitude,longitude`),
+      ])
+      setProgress(90)
+
+      const oer = oerRaw.filter(s => s.latitude && s.longitude).map(s => ({
+        ...s, lat: parseFloat(s.latitude), lng: parseFloat(s.longitude),
         epicUrl: s.project_specific_document?.url || null,
       }))
+      const spillsTrimmed = spillsRaw.filter(s => s.latitude && s.longitude).map(s => ({
+        spill_number: s.spill_number, facility: s.facility, material: s.material_1,
+        quantity: s.quantity_1, unit: s.unit_1, spill_date: s.spill_date,
+        status: s.status, cause: s.cause, county: s.county,
+        lat: parseFloat(s.latitude), lng: parseFloat(s.longitude),
+      }))
+      const remTrimmed = remRaw.filter(s => s.latitude && s.longitude).map(s => ({
+        dec_id: s.dec_id, site_name: s.site_name, county: s.county, address: s.address_1,
+        town: s.town, zip: s.zip, program_type: s.program_type, site_class: s.site_class,
+        lat: parseFloat(s.latitude), lng: parseFloat(s.longitude),
+      }))
 
-      // --- NYSDEC Spills (NYC, open only) ---
-      setMessage('Fetching NYSDEC spill records...')
-      let spills = []
-      offset = 0
-      while (true) {
-        const r = await fetch(`${SPILLS_URL}?$where=${encodeURIComponent(NYC_COUNTIES)}&$limit=1000&$offset=${offset}&$order=spill_number&$select=spill_number,county,spill_date,facility,material_1,quantity_1,unit_1,status,cause,latitude,longitude`)
-        const chunk = await r.json()
-        spills = spills.concat(chunk)
-        if (chunk.length < 1000) break
-        offset += 1000
-        setMessage(`Fetched ${spills.length} spill records...`)
-      }
-      const spillsTrimmed = spills
-        .filter(s => s.latitude && s.longitude)
-        .map(s => ({
-          spill_number: s.spill_number,
-          facility: s.facility,
-          material: s.material_1,
-          quantity: s.quantity_1,
-          unit: s.unit_1,
-          spill_date: s.spill_date,
-          status: s.status,
-          cause: s.cause,
-          county: s.county,
-          lat: parseFloat(s.latitude),
-          lng: parseFloat(s.longitude),
-        }))
-
-      // --- NYSDEC Remediation sites (NYC) ---
-      setMessage('Fetching NYSDEC remediation sites...')
-      let rem = []
-      offset = 0
-      while (true) {
-        const r = await fetch(`${REMEDIATION_URL}?$where=${encodeURIComponent(NYC_COUNTIES)}&$limit=1000&$offset=${offset}&$order=site_name&$select=dec_id,site_name,county,address_1,town,zip,program_type,site_class,latitude,longitude`)
-        const chunk = await r.json()
-        rem = rem.concat(chunk)
-        if (chunk.length < 1000) break
-        offset += 1000
-        setMessage(`Fetched ${rem.length} remediation sites...`)
-      }
-      const remTrimmed = rem
-        .filter(s => s.latitude && s.longitude)
-        .map(s => ({
-          dec_id: s.dec_id,
-          site_name: s.site_name,
-          county: s.county,
-          address: s.address_1,
-          town: s.town,
-          zip: s.zip,
-          program_type: s.program_type,
-          site_class: s.site_class,
-          lat: parseFloat(s.latitude),
-          lng: parseFloat(s.longitude),
-        }))
-
-      // Trim to only needed fields before caching
       const edesigTrimmed = edesig.map(({ enumber, effective_date, borocode, taxblock, taxlot, hazmat_code, air_code, noise_code, hazmat_date, air_date, noise_date, ceqr_num, ulurp_num, zoning_map, description, bbl, lat, lng }) =>
         ({ enumber, effective_date, borocode, taxblock, taxlot, hazmat_code, air_code, noise_code, hazmat_date, air_date, noise_date, ceqr_num, ulurp_num, zoning_map, description, bbl, lat, lng }))
       const oerTrimmed = oer.map(({ oer_project_numbers, project_name, street_number, street_name, borough, bbl, oer_program, class: cls, phase, epicUrl, lat, lng, zip_code, community_district, nta_name }) =>
@@ -443,6 +402,7 @@ export default function App() {
       setSpillSites(spillsTrimmed)
       setRemSites(remTrimmed)
       buildOerIndex(oerTrimmed)
+      setProgress(100)
       setStatus('done')
     } catch (err) {
       setStatus('error')
@@ -663,8 +623,13 @@ export default function App() {
             <div style={{ position: 'absolute', inset: 0, background: 'rgba(26,26,46,0.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 600 }}>
               <img src="/logo.png" alt="" style={{ width: 56, height: 56, marginBottom: 20, opacity: 0.9 }} />
               <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Loading Environmental Data</div>
-              <div style={{ fontSize: 13, color: '#aaa', marginBottom: 6 }}>{message}</div>
-              <div style={{ fontSize: 11, color: '#555', marginTop: 4 }}>First load ~60 sec · Results cached for 24 hours</div>
+              <div style={{ fontSize: 13, color: '#aaa', marginBottom: 16, maxWidth: 360, textAlign: 'center' }}>{message}</div>
+              <div style={{ width: 320, background: 'rgba(255,255,255,0.1)', borderRadius: 6, overflow: 'hidden' }}>
+                <div style={{ height: 6, background: '#3498db', width: `${progress}%`, transition: 'width 0.35s ease', borderRadius: 6 }} />
+              </div>
+              <div style={{ fontSize: 11, color: '#555', marginTop: 10 }}>
+                {progress > 0 ? `${progress}% complete` : 'Starting...'} · Results cached for 24 hours
+              </div>
             </div>
           )}
 
