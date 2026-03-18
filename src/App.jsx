@@ -7,10 +7,9 @@ import 'leaflet/dist/leaflet.css'
 const E_URL    = 'https://data.cityofnewyork.us/resource/hxm3-23vy.json'
 const PLUTO_URL = 'https://data.cityofnewyork.us/resource/64uk-42ks.json'
 const OER_URL  = 'https://data.cityofnewyork.us/resource/3279-pp7v.json'
-const SPILLS_URL = 'https://data.ny.gov/resource/u44d-k5fk.json'
-const REMEDIATION_URL = 'https://data.ny.gov/resource/dnvn-uqxm.json'
-const NYC_COUNTIES = "county in('BRONX','KINGS','NEW YORK','QUEENS','RICHMOND')"
-const CACHE_KEY = 'edesig_v6'
+const REM_URL  = 'https://data.ny.gov/resource/c6ci-rzpg.json'
+const REM_COUNTIES = "county in('Bronx','Kings','New York','Queens','Richmond')"
+const CACHE_KEY = 'edesig_v11'
 
 const BOROUGHS = { '1': 'Manhattan', '2': 'Bronx', '3': 'Brooklyn', '4': 'Queens', '5': 'Staten Island' }
 
@@ -278,6 +277,39 @@ async function fetchMapTileImage(lat, lng, markerColor) {
   return out.toDataURL('image/jpeg', 0.88)
 }
 
+const LOADING_FACTS = [
+  "Did you know? Impact Environmental has 35+ years of environmental consulting expertise in NYC.",
+  "Did you know? Impact won NYC's first beneficial use determination for contaminated soil recycling.",
+  "Did you know? They contributed to World Trade Center reconstruction and NYC subway excavations.",
+  "Did you know? Impact specializes in E-Designation compliance — turning permits into approvals.",
+  "Did you know? A 13-12 Beach Channel Drive project won Impact a 2025 Big Apple Brownfield Award.",
+  "Did you know? Impact provides Phase I & II ESAs for developers, lenders, and property owners.",
+  "Did you know? They manage NYC OER Voluntary Cleanup Program (VCP) enrollments end-to-end.",
+  "Did you know? Impact handles NYSDEC Brownfield Cleanup Program (BCP) track selection and tax credits.",
+  "Did you know? The company operates from Bohemia, NY and Jersey City, NJ offices.",
+  "Did you know? Impact received the National Environmental Excellence Award in 2024.",
+  "Did you know? They served Columbia University's Manhattanville campus expansion in NYC.",
+  "Did you know? Impact partnered with NYC's Department of Housing Preservation & Development.",
+  "Did you know? They manage the LIRR East Side Access Tunnel environmental work in Queens.",
+  "Did you know? Impact expanded to a former DuPont facility project in the Midwest in 2020.",
+  "Did you know? They offer aerial drone services for environmental surveying and site assessments.",
+  "Did you know? Impact provides CEQR air quality analysis and noise impact studies for NYC projects.",
+  "Did you know? Every NYC E-Designation must be resolved before a building permit can be issued.",
+  "Did you know? There are thousands of active E-Designated lots across NYC's five boroughs.",
+  "Did you know? OER's Voluntary Cleanup Program offers liability protection upon remediation completion.",
+  "Did you know? NYC's E-Designation program was created as part of the CEQR zoning review process.",
+  "Did you know? A Phase II ESA involves soil borings and groundwater sampling to confirm contamination.",
+  "Did you know? Remedial Action Plans (RAPs) must be approved by NYC OER before cleanup begins.",
+  "Did you know? Impact handles waste management and material supply services across NY and NJ.",
+  "Did you know? Brownfield redevelopment in NYC can qualify for significant NYS tax credits.",
+  "Did you know? Impact Environmental prioritizes environmental justice and community engagement.",
+  "Did you know? The NYSDEC Brownfield Cleanup Program has cleaned up hundreds of NYC sites.",
+  "Did you know? Impact's licensed professionals have guided projects through OER, NYSDEC, and CEQR.",
+  "Did you know? Noise E-Designations require interior levels below 45 dBA in NYC sleeping areas.",
+  "Did you know? Air quality E-Designations can require sealed facades and alternate ventilation systems.",
+  "Did you know? Impact positions every client on solid ground — from due diligence to certificate of completion.",
+]
+
 function Resizer() {
   const map = useMap()
   useEffect(() => { map.invalidateSize() }, [map])
@@ -295,7 +327,6 @@ function MapFlyTo({ target }) {
 export default function App() {
   const [edesigSites, setEdesigSites]   = useState([])
   const [oerSites, setOerSites]         = useState([])
-  const [spillSites, setSpillSites]     = useState([])
   const [remSites, setRemSites]         = useState([])
   const [oerByBbl, setOerByBbl]         = useState({})
   const [selected, setSelected]         = useState(null)
@@ -305,17 +336,24 @@ export default function App() {
   const [searchResults, setSearchResults] = useState([])
   const [flyTarget, setFlyTarget]       = useState(null)
   const [progress, setProgress]         = useState(0)
+  const [factIdx, setFactIdx]           = useState(0)
   const searchRef = useRef(null)
+
+  useEffect(() => {
+    if (status !== 'loading') return
+    setFactIdx(Math.floor(Math.random() * LOADING_FACTS.length))
+    const id = setInterval(() => setFactIdx(i => (i + 1) % LOADING_FACTS.length), 7000)
+    return () => clearInterval(id)
+  }, [status])
 
   useEffect(() => { loadAll() }, [])
 
   async function loadAll() {
     const cached = await cacheGet(CACHE_KEY)
-    if (cached?.edesig?.length > 0 && cached?.oer?.length > 0 && cached?.spills && cached?.rem) {
+    if (cached?.edesig?.length > 0 && cached?.oer?.length > 0) {
       setEdesigSites(cached.edesig)
       setOerSites(cached.oer)
-      setSpillSites(cached.spills)
-      setRemSites(cached.rem)
+      setRemSites(cached.rem || [])
       buildOerIndex(cached.oer)
       setStatus('done')
       return
@@ -329,6 +367,7 @@ export default function App() {
       while (true) {
         const r = await fetch(`${baseUrl}&$offset=${off}`)
         const chunk = await r.json()
+        if (!Array.isArray(chunk)) break
         results = results.concat(chunk)
         if (chunk.length < 1000) break
         off += 1000
@@ -360,46 +399,56 @@ export default function App() {
               coordMap[String(Math.round(parseFloat(row.bbl)))] = { lat: parseFloat(row.latitude), lng: parseFloat(row.longitude) }
           })
           completedBatches++
-          setProgress(10 + Math.round((completedBatches / batches.length) * 45))
-          setMessage(`Geocoded ${Math.min(completedBatches * BATCH, bbls.length)} / ${bbls.length} lots...`)
+          setProgress(10 + Math.round((completedBatches / batches.length) * 70))
+          setMessage(`Geocoding ${Math.min(completedBatches * BATCH, bbls.length)} / ${bbls.length} lots...`)
         }))
       }
       edesig = edesig.map(s => { const c = coordMap[s.bbl]; return c ? { ...s, ...c } : null }).filter(Boolean)
-      setProgress(55)
+      setProgress(80)
 
-      // --- OER + Spills + Remediation in parallel ---
-      setMessage('Fetching OER, Spills & Remediation data in parallel...')
-      const [oerRaw, spillsRaw, remRaw] = await Promise.all([
+      // --- OER + NYSDEC Remediation in parallel ---
+      setMessage('Fetching OER & NYSDEC Remediation sites...')
+      const [oerRaw, remRaw] = await Promise.all([
         fetchAllPages(`${OER_URL}?$limit=1000&$order=project_name`),
-        fetchAllPages(`${SPILLS_URL}?$where=${encodeURIComponent(NYC_COUNTIES)}&$limit=1000&$order=spill_number&$select=spill_number,county,spill_date,facility,material_1,quantity_1,unit_1,status,cause,latitude,longitude`),
-        fetchAllPages(`${REMEDIATION_URL}?$where=${encodeURIComponent(NYC_COUNTIES)}&$limit=1000&$order=site_name&$select=dec_id,site_name,county,address_1,town,zip,program_type,site_class,latitude,longitude`),
+        fetchAllPages(`${REM_URL}?$where=${encodeURIComponent(REM_COUNTIES)}&$limit=1000&$order=program_number&$select=program_number,program_type,program_facility_name,siteclass,address1,locality,county,latitude,longitude,contaminants`),
       ])
-      setProgress(90)
+      setProgress(95)
 
       const oer = oerRaw.filter(s => s.latitude && s.longitude).map(s => ({
         ...s, lat: parseFloat(s.latitude), lng: parseFloat(s.longitude),
         epicUrl: s.project_specific_document?.url || null,
       }))
-      const spillsTrimmed = spillsRaw.filter(s => s.latitude && s.longitude).map(s => ({
-        spill_number: s.spill_number, facility: s.facility, material: s.material_1,
-        quantity: s.quantity_1, unit: s.unit_1, spill_date: s.spill_date,
-        status: s.status, cause: s.cause, county: s.county,
-        lat: parseFloat(s.latitude), lng: parseFloat(s.longitude),
-      }))
-      const remTrimmed = remRaw.filter(s => s.latitude && s.longitude).map(s => ({
-        dec_id: s.dec_id, site_name: s.site_name, county: s.county, address: s.address_1,
-        town: s.town, zip: s.zip, program_type: s.program_type, site_class: s.site_class,
-        lat: parseFloat(s.latitude), lng: parseFloat(s.longitude),
+      // Deduplicate by program_number (dataset has one row per contaminant)
+      const remByNum = {}
+      remRaw.filter(s => s.latitude && s.longitude).forEach(s => {
+        const key = s.program_number
+        if (!remByNum[key]) {
+          remByNum[key] = {
+            program_number: s.program_number,
+            program_type: s.program_type,
+            site_name: s.program_facility_name,
+            siteclass: s.siteclass,
+            address: s.address1,
+            locality: s.locality,
+            county: s.county,
+            contaminants: [],
+            lat: parseFloat(s.latitude),
+            lng: parseFloat(s.longitude),
+          }
+        }
+        if (s.contaminants) remByNum[key].contaminants.push(s.contaminants)
+      })
+      const remTrimmed = Object.values(remByNum).map(s => ({
+        ...s, contaminants: s.contaminants.join(', ') || null
       }))
 
       const edesigTrimmed = edesig.map(({ enumber, effective_date, borocode, taxblock, taxlot, hazmat_code, air_code, noise_code, hazmat_date, air_date, noise_date, ceqr_num, ulurp_num, zoning_map, description, bbl, lat, lng }) =>
         ({ enumber, effective_date, borocode, taxblock, taxlot, hazmat_code, air_code, noise_code, hazmat_date, air_date, noise_date, ceqr_num, ulurp_num, zoning_map, description, bbl, lat, lng }))
       const oerTrimmed = oer.map(({ oer_project_numbers, project_name, street_number, street_name, borough, bbl, oer_program, class: cls, phase, epicUrl, lat, lng, zip_code, community_district, nta_name }) =>
         ({ oer_project_numbers, project_name, street_number, street_name, borough, bbl, oer_program, class: cls, phase, epicUrl, lat, lng, zip_code, community_district, nta_name }))
-      await cacheSet(CACHE_KEY, { edesig: edesigTrimmed, oer: oerTrimmed, spills: spillsTrimmed, rem: remTrimmed })
+      await cacheSet(CACHE_KEY, { edesig: edesigTrimmed, oer: oerTrimmed, rem: remTrimmed })
       setEdesigSites(edesigTrimmed)
       setOerSites(oerTrimmed)
-      setSpillSites(spillsTrimmed)
       setRemSites(remTrimmed)
       buildOerIndex(oerTrimmed)
       setProgress(100)
@@ -420,26 +469,22 @@ export default function App() {
     setOerByBbl(idx)
   }
 
-  function getNearby(lat, lng) {
-    const RADIUS = 0.25 // miles (~1320 ft)
-    return {
-      nearbySpills: spillSites.filter(s => haversineDistance(lat, lng, s.lat, s.lng) <= RADIUS),
-      nearbyRem: remSites.filter(s => haversineDistance(lat, lng, s.lat, s.lng) <= RADIUS),
-    }
+  function getNearbyRem(lat, lng) {
+    return remSites.filter(s => haversineDistance(lat, lng, s.lat, s.lng) <= 0.25)
   }
 
   function handleEdesigClick(site) {
     const oer = oerByBbl[site.bbl] || null
-    setSelected({ type: oer ? 'both' : 'edesig', edesig: site, oer, ...getNearby(site.lat, site.lng) })
+    setSelected({ type: oer ? 'both' : 'edesig', edesig: site, oer, nearbyRem: getNearbyRem(site.lat, site.lng) })
   }
 
   function handleOerClick(site) {
-    setSelected({ type: 'oer', edesig: null, oer: site, ...getNearby(site.lat, site.lng) })
+    setSelected({ type: 'oer', edesig: null, oer: site, nearbyRem: getNearbyRem(site.lat, site.lng) })
   }
 
   async function refreshData() {
     await cacheClear()
-    setEdesigSites([]); setOerSites([]); setSpillSites([]); setRemSites([]); setOerByBbl({}); setSelected(null)
+    setEdesigSites([]); setOerSites([]); setRemSites([]); setOerByBbl({}); setSelected(null)
     loadAll()
   }
 
@@ -509,7 +554,7 @@ export default function App() {
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
           {status === 'done' && (
             <span style={{ fontSize: 11, color: '#666' }}>
-              {edesigSites.length.toLocaleString()} E-desig · {oerSites.length.toLocaleString()} OER · {spillSites.length.toLocaleString()} Spills · {remSites.length.toLocaleString()} Remediation
+              {edesigSites.length.toLocaleString()} E-desig · {oerSites.length.toLocaleString()} OER · {remSites.length.toLocaleString()} Remediation
             </span>
           )}
           {(status === 'loading' || status === 'error') && <span style={{ fontSize: 11, color: status === 'error' ? '#e74c3c' : '#aaa' }}>{message}</span>}
@@ -531,11 +576,11 @@ export default function App() {
             <MapFlyTo target={flyTarget} />
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap contributors' />
 
-            {/* NYSDEC Remediation rings — furthest back */}
+            {/* NYSDEC Remediation rings — behind everything */}
             {remSites.map((site, i) => (
-              <CircleMarker key={`rem-${i}`} center={[site.lat, site.lng]} radius={9}
-                pathOptions={{ fillColor: '#c0392b', color: '#c0392b', weight: 1.5, fillOpacity: 0.12, opacity: 0.6 }}
-                eventHandlers={{ click: () => setSelected({ type: 'rem', edesig: null, oer: null, rem: site, ...getNearby(site.lat, site.lng) }) }}
+              <CircleMarker key={`rem-${i}`} center={[site.lat, site.lng]} radius={8}
+                pathOptions={{ fillColor: '#c0392b', color: '#c0392b', weight: 1.5, fillOpacity: 0.12, opacity: 0.55 }}
+                eventHandlers={{ click: () => setSelected({ type: 'rem', edesig: null, oer: null, rem: site, nearbyRem: [] }) }}
               >
                 <Tooltip>{site.site_name || 'NYSDEC Remediation Site'}</Tooltip>
               </CircleMarker>
@@ -548,16 +593,6 @@ export default function App() {
                 eventHandlers={{ click: () => handleOerClick(site) }}
               >
                 <Tooltip>{site.project_name}</Tooltip>
-              </CircleMarker>
-            ))}
-
-            {/* NYSDEC Spill dots */}
-            {spillSites.map((site, i) => (
-              <CircleMarker key={`sp-${i}`} center={[site.lat, site.lng]} radius={4}
-                pathOptions={{ fillColor: '#f39c12', color: '#f39c12', weight: 1, fillOpacity: 0.85 }}
-                eventHandlers={{ click: () => setSelected({ type: 'spill', edesig: null, oer: null, spill: site, ...getNearby(site.lat, site.lng) }) }}
-              >
-                <Tooltip>{site.facility || site.spill_number}</Tooltip>
               </CircleMarker>
             ))}
 
@@ -604,14 +639,8 @@ export default function App() {
                 <span style={{ color: '#444' }}>E-Desig + OER Overlap</span>
               </div>
               <div style={{ height: 1, background: '#eee', margin: '10px 0' }} />
-              <div style={{ fontWeight: 700, color: '#1a1a2e', marginBottom: 8, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8 }}>NYSDEC Spills</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#f39c12', flexShrink: 0 }} />
-                <span style={{ color: '#444' }}>Spill Incident</span>
-              </div>
-              <div style={{ height: 1, background: '#eee', margin: '10px 0' }} />
               <div style={{ fontWeight: 700, color: '#1a1a2e', marginBottom: 8, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8 }}>NYSDEC Remediation</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                 <div style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid #c0392b', background: '#c0392b20', flexShrink: 0 }} />
                 <span style={{ color: '#444' }}>Remediation Site</span>
               </div>
@@ -620,15 +649,25 @@ export default function App() {
 
           {/* Loading overlay */}
           {status === 'loading' && (
-            <div style={{ position: 'absolute', inset: 0, background: 'rgba(26,26,46,0.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 600 }}>
-              <img src="/logo.png" alt="" style={{ width: 56, height: 56, marginBottom: 20, opacity: 0.9 }} />
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Loading Environmental Data</div>
-              <div style={{ fontSize: 13, color: '#aaa', marginBottom: 16, maxWidth: 360, textAlign: 'center' }}>{message}</div>
-              <div style={{ width: 320, background: 'rgba(255,255,255,0.1)', borderRadius: 6, overflow: 'hidden' }}>
-                <div style={{ height: 6, background: '#3498db', width: `${progress}%`, transition: 'width 0.35s ease', borderRadius: 6 }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(13,13,30,0.97)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 600 }}>
+              <img src="/logo.png" alt="" style={{ width: 52, height: 52, marginBottom: 18, opacity: 0.9 }} />
+              <div style={{ fontSize: 17, fontWeight: 700, color: '#fff', marginBottom: 6, letterSpacing: 0.3 }}>Loading Environmental Data</div>
+              <div style={{ fontSize: 12, color: '#667', marginBottom: 28, letterSpacing: 0.5, textTransform: 'uppercase' }}>{message}</div>
+
+              {/* Progress bar */}
+              <div style={{ width: 340, background: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden', marginBottom: 6 }}>
+                <div style={{ height: 4, background: 'linear-gradient(90deg, #2980b9, #3498db)', width: `${progress}%`, transition: 'width 0.35s ease' }} />
               </div>
-              <div style={{ fontSize: 11, color: '#555', marginTop: 10 }}>
-                {progress > 0 ? `${progress}% complete` : 'Starting...'} · Results cached for 24 hours
+              <div style={{ fontSize: 11, color: '#445', marginBottom: 48 }}>
+                {progress > 0 ? `${progress}%` : '0%'} · Results cached for 24 hours
+              </div>
+
+              {/* Rotating fact */}
+              <div style={{ width: 420, borderTop: '1px solid rgba(52,152,219,0.25)', paddingTop: 20, textAlign: 'center' }}>
+                <div style={{ fontSize: 9.5, fontWeight: 700, color: '#3498db', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>Impact Environmental</div>
+                <div style={{ fontSize: 13.5, color: '#c8d0e0', lineHeight: 1.65, minHeight: 44, transition: 'opacity 0.5s ease' }}>
+                  {LOADING_FACTS[factIdx]}
+                </div>
               </div>
             </div>
           )}
@@ -646,7 +685,7 @@ export default function App() {
           {/* Debug status (top-right, small) */}
           {status === 'done' && (
             <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#0f0', fontFamily: 'monospace', fontSize: 10, padding: '5px 10px', borderRadius: 4, zIndex: 500, lineHeight: 1.8 }}>
-              E-desig: {edesigSites.length} · OER: {oerSites.length} · Spills: {spillSites.length} · Rem: {remSites.length}
+              E-desig: {edesigSites.length} · OER: {oerSites.length} · Rem: {remSites.length}
             </div>
           )}
         </div>
@@ -662,14 +701,38 @@ export default function App() {
   )
 }
 
+const REM_PROGRAM_TYPES = {
+  'HW':   'Hazardous Waste (State Superfund)',
+  'VCP':  'Voluntary Cleanup Program (VCP)',
+  'BCP':  'Brownfield Cleanup Program (BCP)',
+  'RCRA': 'Resource Conservation & Recovery Act (RCRA)',
+  'ERP':  'Environmental Restoration Program (ERP)',
+  'SSC':  'State Superfund Contract (SSC)',
+  'MWBE': 'Minority/Women Business Enterprise Site',
+}
+const REM_SITE_CLASSES = {
+  '1': { label: 'Class 1', desc: 'Significant threat to public health or environment — action required.' },
+  '2': { label: 'Class 2', desc: 'Significant threat to public health or environment — action required.' },
+  '3': { label: 'Class 3', desc: 'Does not require action at this time, but requires continued site management.' },
+  '4': { label: 'Class 4', desc: 'Properly closed, but requires continued site management (e.g., institutional controls).' },
+  '5': { label: 'Class 5', desc: 'Properly closed with no further action required.' },
+  'N': { label: 'N/A',     desc: 'Classification not applicable to this site type.' },
+  'P': { label: 'Potential', desc: 'Potential hazardous waste site — under preliminary assessment.' },
+  'C': { label: 'Completed', desc: 'Remediation complete. Certificate of Completion or Notice of Satisfaction issued.' },
+}
+
 // ─────────────────────────────────────────
 // SITE PANEL
 // ─────────────────────────────────────────
 function SitePanel({ selected, onClose }) {
-  const { type, edesig, oer, nearbySpills = [], nearbyRem = [], rem, spill } = selected
-  const borough = edesig ? (BOROUGHS[String(edesig.borocode)] || '—') : (oer?.borough || rem?.county || spill?.county || '—')
+  const { type, edesig, oer, nearbyRem = [], rem } = selected
+  const borough = edesig ? (BOROUGHS[String(edesig.borocode)] || '—') : (oer?.borough || rem?.county || '—')
 
   const [pluto, setPluto] = useState(null)
+  const [remPluto, setRemPluto] = useState(null)
+  const [remBbl, setRemBbl] = useState(null)
+
+  // PLUTO for E-designation sites (via BBL)
   useEffect(() => {
     if (!edesig?.bbl) { setPluto(null); return }
     fetch(`${PLUTO_URL}?$where=${encodeURIComponent(`bbl='${edesig.bbl}.00000000'`)}&$select=zonedist1,lotarea,bldgarea,numfloors,yearbuilt,assessland,assesstot,unitstotal,unitsres,landuse,ownername&$limit=1`)
@@ -677,6 +740,24 @@ function SitePanel({ selected, onClose }) {
       .then(rows => setPluto(rows[0] || null))
       .catch(() => setPluto(null))
   }, [edesig?.bbl])
+
+  // PLUTO for remediation sites (via GeoSearch → BBL)
+  useEffect(() => {
+    if (!rem?.address) { setRemPluto(null); setRemBbl(null); return }
+    const query = `${rem.address}, ${rem.locality || rem.county}, NY`
+    fetch(`https://geosearch.planninglabs.nyc/v2/search?text=${encodeURIComponent(query)}&size=1`)
+      .then(r => r.json())
+      .then(d => {
+        const bbl = d?.features?.[0]?.properties?.addendum?.pad?.bbl
+        if (!bbl) return
+        setRemBbl(bbl)
+        const bblPadded = bbl + '.00000000'
+        return fetch(`${PLUTO_URL}?$where=${encodeURIComponent(`bbl='${bblPadded}'`)}&$select=zonedist1,lotarea,bldgarea,numfloors,yearbuilt,assessland,assesstot,landuse,ownername,unitsres&$limit=1`)
+          .then(r => r.json())
+          .then(rows => setRemPluto(rows[0] || null))
+      })
+      .catch(() => { setRemPluto(null); setRemBbl(null) })
+  }, [rem?.address])
 
   const eTypes = edesig ? [
     { key: 'hazmat', label: 'Hazardous Materials', color: '#e74c3c' },
@@ -695,9 +776,9 @@ function SitePanel({ selected, onClose }) {
     let y = 0
 
     // ── Fetch logo + map image in parallel ──────────────────────────
-    const siteLat = edesig?.lat ?? oer?.lat
-    const siteLng = edesig?.lng ?? oer?.lng
-    const markerHex = edesig ? edesigColor(edesig) : (oer ? oerColor(oer) : '#888888')
+    const siteLat = edesig?.lat ?? oer?.lat ?? rem?.lat
+    const siteLng = edesig?.lng ?? oer?.lng ?? rem?.lng
+    const markerHex = edesig ? edesigColor(edesig) : (oer ? oerColor(oer) : '#c0392b')
     const [logoDataUrl, mapDataUrl] = await Promise.all([
       fetch('/logo.png').then(r => r.blob()).then(b => new Promise(res => {
         const rd = new FileReader(); rd.onload = e => res(e.target.result); rd.readAsDataURL(b)
@@ -761,13 +842,16 @@ function SitePanel({ selected, onClose }) {
     const titleX = logoDataUrl ? L + 58 : L
 
     doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
-    doc.text(edesig ? 'E-Designation Site Report' : 'OER Cleanup Site Report', titleX, 34)
+    const reportTitle = edesig ? 'E-Designation Site Report' : rem ? 'NYSDEC Remediation Site Report' : 'OER Cleanup Site Report'
+    doc.text(reportTitle, titleX, 34)
 
     doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(155, 168, 192)
-    doc.text(edesig
+    const subLine = edesig
       ? `${edesig.enumber}  ·  ${borough}  ·  BBL ${edesig.bbl}`
-      : `${oer?.project_name ?? '—'}  ·  ${borough}`,
-      titleX, 49)
+      : rem
+        ? `${rem.site_name ?? '—'}  ·  ${rem.address ?? ''}  ·  ${rem.county}`
+        : `${oer?.project_name ?? '—'}  ·  ${borough}`
+    doc.text(subLine, titleX, 49)
 
     doc.setFontSize(7.5); doc.setTextColor(95, 108, 130)
     doc.text(`Impact Environmental  ·  impactenvironmental.com  ·  ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, titleX, 63)
@@ -828,6 +912,18 @@ function SitePanel({ selected, onClose }) {
       propRows.push(['Phase', oer.phase])
       propRows.push(['Neighborhood', oer.nta_name])
       propRows.push(['Zip Code', oer.zip_code])
+      if (siteLat != null) propRows.push(['Coordinates', `${siteLat.toFixed(5)}, ${siteLng.toFixed(5)}`])
+    }
+    if (rem) {
+      propRows.push(['Program Number', rem.program_number])
+      propRows.push(['Program Type', REM_PROGRAM_TYPES[rem.program_type] || rem.program_type])
+      propRows.push(['Site Class', rem.siteclass ? `${rem.siteclass} — ${REM_SITE_CLASSES[rem.siteclass]?.desc || ''}` : null])
+      propRows.push(['Site Name', rem.site_name])
+      propRows.push(['Address', rem.address])
+      propRows.push(['Locality', rem.locality])
+      propRows.push(['County', rem.county])
+      propRows.push(['Contaminants of Concern', rem.contaminants])
+      if (remBbl) propRows.push(['BBL (from address geocode)', remBbl])
       if (siteLat != null) propRows.push(['Coordinates', `${siteLat.toFixed(5)}, ${siteLng.toFixed(5)}`])
     }
     propRows.forEach(([label, value], i) => addRow(label, value, i))
@@ -902,14 +998,46 @@ function SitePanel({ selected, onClose }) {
       addPara('For contaminants of concern and detailed remedial action documentation, refer to the OER EPIC project documents (link below).', 9, [130, 135, 150])
     }
 
+    // ── NYSDEC REMEDIATION CONTEXT ───────────────────────────────────
+    if (rem) {
+      sectionHeader('NYSDEC Remediation Site Context', [192, 57, 43])
+      const ptDesc = REM_PROGRAM_TYPES[rem.program_type]
+      if (ptDesc) { addPara(`Program Type — ${ptDesc}:`, 9.5, [50, 50, 70], true); y -= 4 }
+      const cls = REM_SITE_CLASSES[rem.siteclass]
+      if (cls) { addPara(`${cls.label}: ${cls.desc}`, 9.5, [70, 80, 95], false, 8); y += 4 }
+      if (rem.contaminants) {
+        addPara('Contaminants of Concern:', 9.5, [50, 50, 70], true); y -= 4
+        addPara(rem.contaminants, 9.5, [70, 80, 95], false, 8); y += 4
+      }
+      if (remPluto) {
+        addPara('Property Data (MapPLUTO):', 9.5, [50, 50, 70], true); y -= 4
+        const pRows = [
+          ['Zoning', remPluto.zonedist1],
+          ['Land Use', remPluto.landuse ? `${remPluto.landuse} — ${LAND_USE[remPluto.landuse] || ''}` : null],
+          ['Lot Area', remPluto.lotarea ? `${parseInt(remPluto.lotarea).toLocaleString()} sq ft` : null],
+          ['Bldg Area', remPluto.bldgarea ? `${parseInt(remPluto.bldgarea).toLocaleString()} sq ft` : null],
+          ['Year Built', remPluto.yearbuilt],
+          ['Owner', remPluto.ownername],
+        ].filter(r => r[1])
+        pRows.forEach(([l, v], i) => addRow(l, v, i))
+        y += 4
+      }
+    }
+
     // ── DOCUMENT REFERENCES ──────────────────────────────────────────
     sectionHeader('Environmental Review Documents & References')
     const links = []
     if (edesig?.ceqr_num) links.push([`CEQR / FEIS Documents  (${edesig.ceqr_num})`, `https://a002-ceqhome.nyc.gov/search/search.aspx?ceqrnum=${encodeURIComponent(edesig.ceqr_num)}`])
     if (oer?.epicUrl)     links.push(['OER EPIC Project Documents  (Contaminants & Remedial Actions)', oer.epicUrl])
+    if (rem?.program_number) {
+      links.push([`NYSDEC Site Record  (Program #${rem.program_number})`, `https://www.dec.ny.gov/cfmx/extapps/derpreview/index.cfm?pageid=3&derp_id=${rem.program_number}`])
+      links.push([`NYSDEC Document Repository  (Program #${rem.program_number})`, `https://www.dec.ny.gov/cfmx/extapps/derdms/index.cfm?pageid=3&program_id=${rem.program_number}`])
+    }
     if (edesig)           links.push(['NYC ZoLa — Zoning & Land Use Map', `https://zola.planning.nyc.gov/?bbl=${edesig.bbl}`])
+    if (remBbl)           links.push(['NYC ZoLa — Zoning & Land Use Map', `https://zola.planning.nyc.gov/?bbl=${remBbl}`])
     if (edesig)           links.push(['ACRIS Property Records', `https://a836-acris.nyc.gov/DS/DocumentSearch/BBLResult?hid_borough=${edesig.borocode}&hid_block=${edesig.taxblock}&hid_lot=${edesig.taxlot}&hid_SearchType=BBL`])
-    links.push(['NYC OER E-Designation Program', 'https://www.nyc.gov/site/oer/remediation/e-designation.page'])
+    if (rem)              links.push(['NYSDEC Environmental Remediation Program', 'https://www.dec.ny.gov/chemical/8438.html'])
+    else                  links.push(['NYC OER E-Designation Program', 'https://www.nyc.gov/site/oer/remediation/e-designation.page'])
     links.forEach(([label, url]) => {
       checkPage(34)
       doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(28, 95, 155)
@@ -964,7 +1092,12 @@ function SitePanel({ selected, onClose }) {
       doc.text('Data: NYC Open Data (OER E-Designations, OER Cleanup Sites, MapPLUTO)  ·  For informational use only', R, 787, { align: 'right' })
     }
 
-    doc.save(edesig ? `EDesig_${edesig.enumber}_BBL${edesig.bbl}.pdf` : `OER_${(oer.project_name || 'site').replace(/\s+/g, '_')}.pdf`)
+    const filename = edesig
+      ? `EDesig_${edesig.enumber}_BBL${edesig.bbl}.pdf`
+      : rem
+        ? `NYSDEC_Rem_${rem.program_number}_${(rem.site_name || 'site').replace(/\s+/g, '_').slice(0, 30)}.pdf`
+        : `OER_${(oer.project_name || 'site').replace(/\s+/g, '_')}.pdf`
+    doc.save(filename)
   }
 
   return (
@@ -982,11 +1115,6 @@ function SitePanel({ selected, onClose }) {
             {rem && <>
               <div style={{ fontSize: 10, color: '#666', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 2 }}>NYSDEC Remediation</div>
               <div style={{ fontSize: 18, fontWeight: 700 }}>{rem.site_name || 'Remediation Site'}</div>
-            </>}
-            {spill && <>
-              <div style={{ fontSize: 10, color: '#666', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 2 }}>NYSDEC Spill Incident</div>
-              <div style={{ fontSize: 18, fontWeight: 700 }}>{spill.spill_number}</div>
-              {spill.facility && <div style={{ fontSize: 13, color: '#aaa', marginTop: 2 }}>{spill.facility}</div>}
             </>}
             <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
               {borough}{edesig ? ` · Block ${edesig.taxblock} · Lot ${edesig.taxlot}` : oer ? ` · ${oer.street_number} ${oer.street_name}` : ''}
@@ -1007,12 +1135,7 @@ function SitePanel({ selected, onClose }) {
           )}
           {rem && (
             <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: '#c0392b', color: '#fff' }}>
-              {rem.program_type || 'Remediation'} · {rem.site_class || '—'}
-            </span>
-          )}
-          {spill && (
-            <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: spill.status === 'Open' || spill.status === 'OPEN' ? '#e74c3c' : '#95a5a6', color: '#fff' }}>
-              {spill.status || 'Spill'}
+              {rem.program_type || 'Remediation'} · Class {rem.siteclass || '—'}
             </span>
           )}
         </div>
@@ -1027,39 +1150,60 @@ function SitePanel({ selected, onClose }) {
         </button>
 
         {/* NYSDEC Remediation direct click details */}
-        {rem && (
+        {rem && (() => {
+          const cls = REM_SITE_CLASSES[rem.siteclass]
+          const ptLabel = REM_PROGRAM_TYPES[rem.program_type] || rem.program_type
+          const clsColor = ['1','2'].includes(rem.siteclass) ? '#c0392b' : ['3'].includes(rem.siteclass) ? '#e67e22' : ['4','5','C'].includes(rem.siteclass) ? '#27ae60' : '#888'
+          return (
+          <>
           <PanelSection title="NYSDEC Remediation Site Details">
-            <div style={{ background: '#fdf0f0', border: '1px solid #c0392b22', borderRadius: 7, padding: '12px 14px' }}>
+            <div style={{ background: '#fdf0f0', border: '1px solid #c0392b22', borderRadius: 8, padding: '14px 16px', marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                <div>
+                  <div style={{ fontSize: 10, color: '#c0392b', fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 3 }}>{ptLabel}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#2c2c2c' }}>{rem.site_name}</div>
+                  <div style={{ fontSize: 12, color: '#777', marginTop: 3 }}>{rem.address}{rem.locality ? `, ${rem.locality}` : ''}</div>
+                </div>
+                {cls && <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 10, background: clsColor, color: '#fff', flexShrink: 0, marginLeft: 10 }}>{cls.label}</span>}
+              </div>
+              {cls && <div style={{ fontSize: 12, color: '#555', lineHeight: 1.6, padding: '8px 10px', background: 'rgba(255,255,255,0.7)', borderRadius: 5, marginBottom: 10 }}>{cls.desc}</div>}
               <InfoTable rows={[
-                ['DEC ID', rem.dec_id],
-                ['Program', rem.program_type],
-                ['Site Class', rem.site_class],
-                ['Address', rem.address],
-                ['Town', rem.town],
-                ['Zip', rem.zip],
+                ['Program #', rem.program_number],
                 ['County', rem.county],
-              ].filter(Boolean)} />
+              ].filter(r => r[1])} />
             </div>
-          </PanelSection>
-        )}
 
-        {/* NYSDEC Spill direct click details */}
-        {spill && (
-          <PanelSection title="Spill Incident Details">
-            <div style={{ background: '#fffbf0', border: '1px solid #f39c1233', borderRadius: 7, padding: '12px 14px' }}>
-              <InfoTable rows={[
-                ['Spill #', spill.spill_number],
-                ['Facility', spill.facility],
-                ['Material', spill.material],
-                ['Quantity', spill.quantity && spill.unit ? `${spill.quantity} ${spill.unit}` : spill.quantity],
-                ['Date', spill.spill_date ? fmt(spill.spill_date) : null],
-                ['Status', spill.status],
-                ['Cause', spill.cause],
-                ['County', spill.county],
-              ].filter(Boolean)} />
+            {rem.contaminants && (
+              <div style={{ background: '#fff8f0', border: '1px solid #e67e2233', borderRadius: 7, padding: '10px 14px', marginBottom: 12 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#e67e22', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>Contaminants of Concern</div>
+                <div style={{ fontSize: 12, color: '#555', lineHeight: 1.6 }}>{rem.contaminants}</div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+              <ExtLink href={`https://www.dec.ny.gov/cfmx/extapps/derpreview/index.cfm?pageid=3&derp_id=${rem.program_number}`} color="#c0392b">NYSDEC Site Record →</ExtLink>
+              <ExtLink href={`https://www.dec.ny.gov/cfmx/extapps/derdms/index.cfm?pageid=3&program_id=${rem.program_number}`} color="#c0392b">NYSDEC Document Repository →</ExtLink>
+              <ExtLink href="https://www.dec.ny.gov/chemical/8438.html" color="#888">NYSDEC Remediation Program Info →</ExtLink>
+              {remBbl && <ExtLink href={`https://zola.planning.nyc.gov/?bbl=${remBbl}`} color="#1a6ea8">NYC ZoLa Zoning Map →</ExtLink>}
+              {remBbl && <ExtLink href={`https://a836-acris.nyc.gov/DS/DocumentSearch/BBLResult?hid_SearchType=BBL`} color="#555">ACRIS Property Records →</ExtLink>}
             </div>
           </PanelSection>
-        )}
+
+          {remPluto && (
+            <PanelSection title="Property Data (MapPLUTO)">
+              <InfoTable rows={[
+                ['Zone District', remPluto.zonedist1],
+                ['Land Use', remPluto.landuse ? `${remPluto.landuse} — ${LAND_USE[remPluto.landuse] || ''}` : null],
+                ['Lot Area', remPluto.lotarea ? `${parseInt(remPluto.lotarea).toLocaleString()} sq ft` : null],
+                ['Building Area', remPluto.bldgarea ? `${parseInt(remPluto.bldgarea).toLocaleString()} sq ft` : null],
+                ['Year Built', remPluto.yearbuilt],
+                ['Owner', remPluto.ownername],
+              ].filter(r => r[1])} />
+            </PanelSection>
+          )}
+          </>
+          )
+        })()}
 
         {/* E-designation narrative */}
         {narrative.length > 0 && <>
@@ -1201,42 +1345,31 @@ function SitePanel({ selected, onClose }) {
           </PanelSection>
         )}
 
-        {/* Nearby NYSDEC Spills */}
-        {nearbySpills.length > 0 && (
-          <PanelSection title={`NYSDEC Spills Within ¼ Mile (${nearbySpills.length})`}>
-            {nearbySpills.map((s, i) => (
-              <div key={i} style={{ background: '#fffbf0', border: '1px solid #f39c1233', borderRadius: 7, padding: '10px 12px', marginBottom: 8 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <span style={{ fontWeight: 700, fontSize: 12, color: '#e67e22' }}>{s.spill_number}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: s.status === 'Open' || s.status === 'OPEN' ? '#e74c3c' : '#95a5a6', color: '#fff' }}>
-                    {s.status || '—'}
-                  </span>
-                </div>
-                <InfoTable rows={[
-                  ['Facility', s.facility],
-                  ['Material', s.material],
-                  ['Date', s.spill_date ? fmt(s.spill_date) : null],
-                  ['Cause', s.cause],
-                ].filter(Boolean)} />
-              </div>
-            ))}
-          </PanelSection>
-        )}
-
         {/* Nearby NYSDEC Remediation */}
         {nearbyRem.length > 0 && (
           <PanelSection title={`NYSDEC Remediation Sites Within ¼ Mile (${nearbyRem.length})`}>
-            {nearbyRem.map((s, i) => (
-              <div key={i} style={{ background: '#fdf0f0', border: '1px solid #c0392b22', borderRadius: 7, padding: '10px 12px', marginBottom: 8 }}>
-                <div style={{ fontWeight: 700, fontSize: 12, color: '#c0392b', marginBottom: 6 }}>{s.site_name || '—'}</div>
-                <InfoTable rows={[
-                  ['Program', s.program_type],
-                  ['Status', s.site_class],
-                  ['Address', s.address],
-                  ['DEC ID', s.dec_id],
-                ].filter(Boolean)} />
-              </div>
-            ))}
+            {nearbyRem.map((s, i) => {
+              const cls = REM_SITE_CLASSES[s.siteclass]
+              const clsColor = ['1','2'].includes(s.siteclass) ? '#c0392b' : ['3'].includes(s.siteclass) ? '#e67e22' : ['4','5','C'].includes(s.siteclass) ? '#27ae60' : '#888'
+              return (
+                <div key={i} style={{ background: '#fdf0f0', border: '1px solid #c0392b22', borderRadius: 7, padding: '10px 12px', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                    <div style={{ fontWeight: 700, fontSize: 12, color: '#c0392b' }}>{s.site_name || '—'}</div>
+                    {cls && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 8, background: clsColor, color: '#fff', flexShrink: 0, marginLeft: 8 }}>{cls.label}</span>}
+                  </div>
+                  <InfoTable rows={[
+                    ['Program', REM_PROGRAM_TYPES[s.program_type] || s.program_type],
+                    ['Address', s.address],
+                    ['Contaminants', s.contaminants],
+                  ].filter(r => r[1])} />
+                  <a href={`https://www.dec.ny.gov/cfmx/extapps/derpreview/index.cfm?pageid=3&derp_id=${s.program_number}`}
+                    target="_blank" rel="noreferrer"
+                    style={{ display: 'inline-block', marginTop: 6, fontSize: 11, color: '#c0392b', textDecoration: 'none', fontWeight: 600 }}>
+                    View NYSDEC Site Record →
+                  </a>
+                </div>
+              )
+            })}
           </PanelSection>
         )}
       </div>
