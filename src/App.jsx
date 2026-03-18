@@ -1027,7 +1027,7 @@ function SitePanel({ selected, onClose }) {
     // ── DOCUMENT REFERENCES ──────────────────────────────────────────
     sectionHeader('Environmental Review Documents & References')
     const links = []
-    if (edesig?.ceqr_num) links.push([`CEQR / FEIS Documents  (${edesig.ceqr_num})`, `https://a002-ceqhome.nyc.gov/search/search.aspx?ceqrnum=${encodeURIComponent(edesig.ceqr_num)}`])
+    if (edesig?.ceqr_num) links.push([`CEQR / FEIS Documents  (${edesig.ceqr_num})`, `https://a002-ceqraccess.nyc.gov/ceqr/?ceqrnum=${encodeURIComponent(edesig.ceqr_num)}`])
     if (oer?.epicUrl)     links.push(['OER EPIC Project Documents  (Contaminants & Remedial Actions)', oer.epicUrl])
     if (rem?.program_number) {
       links.push([`NYSDEC Site Documents  (Program #${rem.program_number})`, `https://extapps.dec.ny.gov/data/DecDocs/${rem.program_number}/`])
@@ -1272,7 +1272,7 @@ function SitePanel({ selected, onClose }) {
             <div style={{ fontSize: 12, color: '#555', lineHeight: 1.5, marginBottom: 10 }}>
               The Final Environmental Impact Statement (FEIS) and all associated CEQR review documents are accessible through the NYC CEQR document search portal.
             </div>
-            <a href={`https://a002-ceqhome.nyc.gov/search/search.aspx?ceqrnum=${encodeURIComponent(edesig.ceqr_num)}`}
+            <a href={`https://a002-ceqraccess.nyc.gov/ceqr/?ceqrnum=${encodeURIComponent(edesig.ceqr_num)}`}
               target="_blank" rel="noreferrer"
               style={{ display: 'block', padding: '9px', background: '#7d3c98', color: '#fff', borderRadius: 5, fontSize: 12, fontWeight: 600, textDecoration: 'none', textAlign: 'center' }}>
               Search CEQR Documents for {edesig.ceqr_num} →
