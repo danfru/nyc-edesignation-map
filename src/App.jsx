@@ -1204,11 +1204,11 @@ function SitePanel({ selected, onClose }) {
             )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-              <ExtLink href={`https://extapps.dec.ny.gov/data/DecDocs/${rem.program_number}/`} color="#c0392b">NYSDEC Site Documents →</ExtLink>
-              <ExtLink href="https://appfactory.dec.ny.gov/DERExternalSearch/ERDSearch" color="#c0392b">NYSDEC Remediation Database Search →</ExtLink>
-              <ExtLink href="https://dec.ny.gov/environmental-protection/site-cleanup" color="#888">NYSDEC Site Cleanup Program →</ExtLink>
-              {remBbl && <ExtLink href={`https://zola.planning.nyc.gov/?bbl=${remBbl}`} color="#1a6ea8">NYC ZoLa Zoning Map →</ExtLink>}
-              {remBbl && <ExtLink href={`https://a836-acris.nyc.gov/DS/DocumentSearch/BBLResult?hid_borough=${remBbl[0]}&hid_block=${String(parseInt(remBbl.slice(1,6)))}&hid_lot=${String(parseInt(remBbl.slice(6,10)))}&hid_SearchType=BBL`} color="#555">ACRIS Property Records →</ExtLink>}
+              <ExtLink href={`https://extapps.dec.ny.gov/data/DecDocs/${rem.program_number}/`} color="#bd562d">NYSDEC Site Documents →</ExtLink>
+              <ExtLink href="https://appfactory.dec.ny.gov/DERExternalSearch/ERDSearch" color="#bd562d">NYSDEC Remediation Database Search →</ExtLink>
+              <ExtLink href="https://dec.ny.gov/environmental-protection/site-cleanup" color="#7b766d">NYSDEC Site Cleanup Program →</ExtLink>
+              {remBbl && <ExtLink href={`https://zola.planning.nyc.gov/?bbl=${remBbl}`} color="#185676">NYC ZoLa Zoning Map →</ExtLink>}
+              {remBbl && <ExtLink href={`https://a836-acris.nyc.gov/DS/DocumentSearch/BBLResult?hid_borough=${remBbl[0]}&hid_block=${String(parseInt(remBbl.slice(1,6)))}&hid_lot=${String(parseInt(remBbl.slice(6,10)))}&hid_SearchType=BBL`} color="#443717">ACRIS Property Records →</ExtLink>}
             </div>
           </PanelSection>
 
@@ -1341,11 +1341,11 @@ function SitePanel({ selected, onClose }) {
         {/* External links */}
         <PanelSection title="External Resources">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-            {oer?.epicUrl && <ExtLink href={oer.epicUrl} color="#9b59b6">OER EPIC Documents →</ExtLink>}
-            {edesig && <ExtLink href={`https://zola.planning.nyc.gov/?bbl=${edesig.bbl}`} color="#1a6ea8">NYC ZoLa Zoning Map →</ExtLink>}
-            {edesig && <ExtLink href={`https://a836-acris.nyc.gov/DS/DocumentSearch/BBLResult?hid_borough=${edesig.borocode}&hid_block=${edesig.taxblock}&hid_lot=${edesig.taxlot}&hid_SearchType=BBL`} color="#555">ACRIS Property Records →</ExtLink>}
-            <ExtLink href="https://www.nyc.gov/site/oer/remediation/e-designation.page" color="#16a085">NYC OER E-Designation Info →</ExtLink>
-            <ExtLink href="https://www.nyc.gov/site/oer/remediation/voluntary-cleanup.page" color="#16a085">NYC OER Cleanup Program →</ExtLink>
+            {oer?.epicUrl && <ExtLink href={oer.epicUrl} color="#443717">OER EPIC Documents →</ExtLink>}
+            {edesig && <ExtLink href={`https://zola.planning.nyc.gov/?bbl=${edesig.bbl}`} color="#185676">NYC ZoLa Zoning Map →</ExtLink>}
+            {edesig && <ExtLink href={`https://a836-acris.nyc.gov/DS/DocumentSearch/BBLResult?hid_borough=${edesig.borocode}&hid_block=${edesig.taxblock}&hid_lot=${edesig.taxlot}&hid_SearchType=BBL`} color="#443717">ACRIS Property Records →</ExtLink>}
+            <ExtLink href="https://www.nyc.gov/site/oer/remediation/e-designation.page" color="#96a153">NYC OER E-Designation Info →</ExtLink>
+            <ExtLink href="https://www.nyc.gov/site/oer/remediation/voluntary-cleanup.page" color="#96a153">NYC OER Cleanup Program →</ExtLink>
           </div>
         </PanelSection>
 
