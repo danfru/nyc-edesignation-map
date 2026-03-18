@@ -513,17 +513,17 @@ export default function App() {
   })
 
   return (
-    <div style={{ position: 'relative', height: '100vh', width: '100vw', overflow: 'hidden', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div style={{ position: 'relative', height: '100vh', width: '100vw', overflow: 'hidden', fontFamily: "'Barlow', 'Segoe UI', sans-serif" }}>
 
       {/* ── Header ── */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, background: 'rgba(13,13,30,0.72)', backdropFilter: 'blur(18px) saturate(180%)', WebkitBackdropFilter: 'blur(18px) saturate(180%)', color: '#fff', height: 52, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 12, zIndex: 1000, borderBottom: '1px solid rgba(255,255,255,0.09)' }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, background: '#443717', backgroundImage: 'repeating-linear-gradient(-45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 10px)', color: '#fff', height: 52, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 12, zIndex: 1000, borderBottom: '3px solid #e37115' }}>
         <img src="/logo.png" alt="Impact" style={{ height: 34, width: 34, objectFit: 'contain', flexShrink: 0 }} />
-        <strong style={{ fontSize: 14, whiteSpace: 'nowrap', letterSpacing: 0.3 }}>NYC Environmental Site Map</strong>
-        <div style={{ width: 1, height: 24, background: '#333', flexShrink: 0 }} />
+        <strong style={{ fontSize: 14, whiteSpace: 'nowrap', letterSpacing: 1.2, textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700 }}>NYC Environmental Site Map</strong>
+        <div style={{ width: 1, height: 24, background: 'rgba(227,113,21,0.5)', flexShrink: 0 }} />
 
         {/* Search */}
         <div ref={searchRef} style={{ position: 'relative', flex: 1, maxWidth: 400 }}>
-          <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.08)', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', padding: '0 10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.1)', borderRadius: 4, border: '1px solid rgba(227,113,21,0.35)', padding: '0 10px' }}>
             <span style={{ color: '#666', fontSize: 12, marginRight: 6 }}>🔍</span>
             <input
               type="text"
@@ -536,12 +536,12 @@ export default function App() {
             {searchQuery && <span onClick={() => { setSearchQuery(''); setSearchResults([]) }} style={{ color: '#555', cursor: 'pointer', fontSize: 13 }}>✕</span>}
           </div>
           {searchResults.length > 0 && (
-            <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', borderRadius: 6, boxShadow: '0 6px 24px rgba(0,0,0,0.18)', zIndex: 2000, marginTop: 4, overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#f5f0e8', borderRadius: 4, boxShadow: '0 6px 24px rgba(68,55,23,0.25)', border: '1px solid #cbbba0', zIndex: 2000, marginTop: 4, overflow: 'hidden' }}>
               {searchResults.map((f, i) => (
                 <div key={i} onClick={() => selectResult(f)}
-                  style={{ padding: '9px 14px', fontSize: 12, color: '#2c3e50', cursor: 'pointer', borderBottom: '1px solid #f0f0f0' }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#f0f4ff'}
-                  onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+                  style={{ padding: '9px 14px', fontSize: 12, color: '#323e4c', cursor: 'pointer', borderBottom: '1px solid #e4ded3', fontFamily: "'Barlow', sans-serif" }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#ede5d8'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#f5f0e8'}
                 >
                   <div style={{ fontWeight: 600 }}>{f.properties.name}</div>
                   <div style={{ color: '#999', fontSize: 11, marginTop: 1 }}>{f.properties.borough || f.properties.region}</div>
@@ -559,7 +559,7 @@ export default function App() {
           )}
           {(status === 'loading' || status === 'error') && <span style={{ fontSize: 11, color: status === 'error' ? '#e74c3c' : '#aaa' }}>{message}</span>}
           {status === 'done' && (
-            <button onClick={refreshData} style={{ background: 'none', border: '1px solid #333', color: '#666', padding: '3px 10px', borderRadius: 4, cursor: 'pointer', fontSize: 11 }}>
+            <button onClick={refreshData} style={{ background: 'none', border: '1px solid rgba(227,113,21,0.5)', color: '#cbbba0', padding: '3px 10px', borderRadius: 3, cursor: 'pointer', fontSize: 11, fontFamily: "'Barlow', sans-serif", letterSpacing: 0.5, textTransform: 'uppercase' }}>
               Refresh
             </button>
           )}
@@ -611,20 +611,20 @@ export default function App() {
 
           {/* ── Legend ── */}
           {status === 'done' && (
-            <div style={{ position: 'absolute', bottom: 24, left: 12, background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(14px) saturate(150%)', WebkitBackdropFilter: 'blur(14px) saturate(150%)', border: '1px solid rgba(255,255,255,0.55)', borderRadius: 10, padding: '12px 16px', boxShadow: '0 4px 24px rgba(0,0,0,0.12)', zIndex: 500, fontSize: 12, minWidth: 180 }}>
-              <div style={{ fontWeight: 700, color: '#1a1a2e', marginBottom: 8, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8 }}>E-Designation Type</div>
+            <div style={{ position: 'absolute', bottom: 24, left: 12, background: 'rgba(245,240,232,0.95)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid #cbbba0', borderLeft: '3px solid #e37115', borderRadius: 4, padding: '12px 16px', boxShadow: '0 4px 20px rgba(68,55,23,0.18)', zIndex: 500, fontSize: 12, minWidth: 180 }}>
+              <div style={{ fontWeight: 700, color: '#443717', marginBottom: 8, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.2, fontFamily: "'Barlow Condensed', sans-serif" }}>E-Designation Type</div>
               {[['#e74c3c','Hazardous Materials'],['#e67e22','Air Quality'],['#3498db','Noise'],['#888','Other']].map(([c,l]) => (
                 <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: c, flexShrink: 0 }} />
-                  <span style={{ color: '#444' }}>{l}</span>
+                  <span style={{ color: '#54301a' }}>{l}</span>
                 </div>
               ))}
               <div style={{ height: 1, background: '#eee', margin: '10px 0' }} />
-              <div style={{ fontWeight: 700, color: '#1a1a2e', marginBottom: 8, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8 }}>OER Cleanup Sites</div>
+              <div style={{ fontWeight: 700, color: '#443717', marginBottom: 8, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.2, fontFamily: "'Barlow Condensed', sans-serif" }}>OER Cleanup Sites</div>
               {[['#9b59b6','Active Remediation'],['#16a085','Completed']].map(([c,l]) => (
                 <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
                   <div style={{ width: 12, height: 12, borderRadius: '50%', border: `2.5px solid ${c}`, background: c+'30', flexShrink: 0 }} />
-                  <span style={{ color: '#444' }}>{l}</span>
+                  <span style={{ color: '#54301a' }}>{l}</span>
                 </div>
               ))}
               <div style={{ height: 1, background: '#eee', margin: '10px 0' }} />
@@ -633,36 +633,36 @@ export default function App() {
                   <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2.5px solid #9b59b6', background: '#9b59b630' }} />
                   <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 6, height: 6, borderRadius: '50%', background: '#e74c3c' }} />
                 </div>
-                <span style={{ color: '#444' }}>E-Desig + OER Overlap</span>
+                <span style={{ color: '#54301a' }}>E-Desig + OER Overlap</span>
               </div>
               <div style={{ height: 1, background: '#eee', margin: '10px 0' }} />
-              <div style={{ fontWeight: 700, color: '#1a1a2e', marginBottom: 8, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8 }}>NYSDEC Remediation</div>
+              <div style={{ fontWeight: 700, color: '#443717', marginBottom: 8, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.2, fontFamily: "'Barlow Condensed', sans-serif" }}>NYSDEC Remediation</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                 <div style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid #c0392b', background: '#c0392b20', flexShrink: 0 }} />
-                <span style={{ color: '#444' }}>Remediation Site</span>
+                <span style={{ color: '#54301a' }}>Remediation Site</span>
               </div>
             </div>
           )}
 
           {/* Loading overlay */}
           {status === 'loading' && (
-            <div style={{ position: 'absolute', inset: 0, background: 'rgba(13,13,30,0.97)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 600 }}>
+            <div style={{ position: 'absolute', inset: 0, background: '#443717', backgroundImage: 'repeating-linear-gradient(-45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 10px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 600 }}>
               <img src="/logo.png" alt="" style={{ width: 52, height: 52, marginBottom: 18, opacity: 0.9 }} />
-              <div style={{ fontSize: 17, fontWeight: 700, color: '#fff', marginBottom: 6, letterSpacing: 0.3 }}>Loading Environmental Data</div>
-              <div style={{ fontSize: 12, color: '#667', marginBottom: 28, letterSpacing: 0.5, textTransform: 'uppercase' }}>{message}</div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: '#fff', marginBottom: 6, letterSpacing: 1.5, textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>Loading Environmental Data</div>
+              <div style={{ fontSize: 12, color: '#cbbba0', marginBottom: 28, letterSpacing: 0.5, textTransform: 'uppercase' }}>{message}</div>
 
               {/* Progress bar */}
-              <div style={{ width: 340, background: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden', marginBottom: 6 }}>
-                <div style={{ height: 4, background: 'linear-gradient(90deg, #2980b9, #3498db)', width: `${progress}%`, transition: 'width 0.35s ease' }} />
+              <div style={{ width: 340, background: 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden', marginBottom: 6 }}>
+                <div style={{ height: 4, background: 'linear-gradient(90deg, #a3551d, #e37115)', width: `${progress}%`, transition: 'width 0.35s ease' }} />
               </div>
-              <div style={{ fontSize: 11, color: '#445', marginBottom: 48 }}>
+              <div style={{ fontSize: 11, color: '#ba8748', marginBottom: 48, fontFamily: "'Barlow', sans-serif", letterSpacing: 0.5 }}>
                 {progress > 0 ? `${progress}%` : '0%'} · Results cached for 24 hours
               </div>
 
               {/* Rotating fact */}
-              <div style={{ width: 420, borderTop: '1px solid rgba(52,152,219,0.25)', paddingTop: 20, textAlign: 'center' }}>
-                <div style={{ fontSize: 9.5, fontWeight: 700, color: '#3498db', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>Impact Environmental</div>
-                <div style={{ fontSize: 13.5, color: '#c8d0e0', lineHeight: 1.65, minHeight: 44, transition: 'opacity 0.5s ease' }}>
+              <div style={{ width: 420, borderTop: '1px solid rgba(186,135,72,0.35)', paddingTop: 20, textAlign: 'center' }}>
+                <div style={{ fontSize: 9.5, fontWeight: 700, color: '#e37115', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 10, fontFamily: "'Barlow Condensed', sans-serif" }}>Impact Environmental</div>
+                <div style={{ fontSize: 13.5, color: '#e4ded3', lineHeight: 1.65, minHeight: 44, transition: 'opacity 0.5s ease', fontFamily: "'Barlow', sans-serif" }}>
                   {LOADING_FACTS[factIdx]}
                 </div>
               </div>
@@ -671,17 +671,17 @@ export default function App() {
 
           {/* Error overlay */}
           {status === 'error' && (
-            <div style={{ position: 'absolute', inset: 0, background: 'rgba(26,26,46,0.95)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 600 }}>
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(68,55,23,0.97)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 600 }}>
               <div style={{ fontSize: 32, marginBottom: 16 }}>⚠️</div>
               <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Failed to Load Data</div>
               <div style={{ fontSize: 13, color: '#e74c3c', marginBottom: 20, maxWidth: 400, textAlign: 'center' }}>{message}</div>
-              <button onClick={refreshData} style={{ padding: '10px 24px', background: '#e74c3c', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>Try Again</button>
+              <button onClick={refreshData} style={{ padding: '10px 24px', background: '#e37115', color: '#fff', border: 'none', borderRadius: 3, cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: "'Barlow', sans-serif", letterSpacing: 0.8, textTransform: 'uppercase' }}>Try Again</button>
             </div>
           )}
 
           {/* Debug status (top-right, small) */}
           {status === 'done' && (
-            <div style={{ position: 'absolute', bottom: 24, right: 12, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', color: '#0f0', fontFamily: 'monospace', fontSize: 10, padding: '5px 10px', borderRadius: 6, zIndex: 500, lineHeight: 1.8, border: '1px solid rgba(0,255,0,0.12)' }}>
+            <div style={{ position: 'absolute', bottom: 24, right: 12, background: 'rgba(68,55,23,0.82)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', color: '#ba8748', fontFamily: "'Barlow', monospace", fontSize: 10, padding: '5px 10px', borderRadius: 3, zIndex: 500, lineHeight: 1.8, border: '1px solid rgba(227,113,21,0.2)' }}>
               E-desig: {edesigSites.length} · OER: {oerSites.length} · Rem: {remSites.length}
             </div>
           )}
@@ -689,7 +689,7 @@ export default function App() {
 
         {/* ── Side Panel ── */}
         {selected && (
-          <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: 440, overflowY: 'auto', background: 'rgba(248,248,252,0.88)', backdropFilter: 'blur(22px) saturate(160%)', WebkitBackdropFilter: 'blur(22px) saturate(160%)', borderLeft: '1px solid rgba(255,255,255,0.45)', boxShadow: '-10px 0 48px rgba(0,0,0,0.2)', zIndex: 800 }}>
+          <div style={{ position: 'absolute', top: 52, right: 0, bottom: 0, width: 440, overflowY: 'auto', background: 'rgba(245,240,232,0.97)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderLeft: '3px solid #e37115', boxShadow: '-6px 0 32px rgba(68,55,23,0.22)', zIndex: 800 }}>
             <SitePanel selected={selected} onClose={() => setSelected(null)} />
           </div>
         )}
@@ -1111,23 +1111,23 @@ function SitePanel({ selected, onClose }) {
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
 
       {/* Header */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(13,13,30,0.88)', backdropFilter: 'blur(16px) saturate(180%)', WebkitBackdropFilter: 'blur(16px) saturate(180%)', borderBottom: '1px solid rgba(255,255,255,0.09)', color: '#fff', padding: '18px 20px', flexShrink: 0 }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#54301a', backgroundImage: 'repeating-linear-gradient(-45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 10px)', borderBottom: '3px solid #e37115', color: '#fff', padding: '18px 20px', flexShrink: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             {edesig && <>
-              <div style={{ fontSize: 10, color: '#666', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 2 }}>E-Designation</div>
+              <div style={{ fontSize: 10, color: '#ba8748', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2, fontFamily: "'Barlow Condensed', sans-serif" }}>E-Designation</div>
               <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.5 }}>{edesig.enumber}</div>
             </>}
             {oer && <div style={{ fontSize: 13, fontWeight: 600, color: edesig ? '#aaa' : '#fff', marginTop: edesig ? 4 : 0, lineHeight: 1.3 }}>{oer.project_name}</div>}
             {rem && <>
-              <div style={{ fontSize: 10, color: '#666', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 2 }}>NYSDEC Remediation</div>
+              <div style={{ fontSize: 10, color: '#ba8748', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2, fontFamily: "'Barlow Condensed', sans-serif" }}>NYSDEC Remediation</div>
               <div style={{ fontSize: 18, fontWeight: 700 }}>{rem.site_name || 'Remediation Site'}</div>
             </>}
-            <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
+            <div style={{ fontSize: 12, color: '#cbbba0', marginTop: 4, fontFamily: "'Barlow', sans-serif" }}>
               {borough}{edesig ? ` · Block ${edesig.taxblock} · Lot ${edesig.taxlot}` : oer ? ` · ${oer.street_number} ${oer.street_name}` : ''}
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid #333', color: '#aaa', width: 30, height: 30, borderRadius: 6, cursor: 'pointer', fontSize: 14, flexShrink: 0, marginLeft: 12 }}>✕</button>
+          <button onClick={onClose} style={{ background: 'rgba(227,113,21,0.18)', border: '1px solid rgba(227,113,21,0.4)', color: '#e37115', width: 30, height: 30, borderRadius: 3, cursor: 'pointer', fontSize: 14, flexShrink: 0, marginLeft: 12 }}>✕</button>
         </div>
 
         {/* Status pills */}
@@ -1149,10 +1149,10 @@ function SitePanel({ selected, onClose }) {
       </div>
 
       {/* Content */}
-      <div style={{ padding: '16px 20px', flex: 1 }}>
+      <div style={{ padding: '16px 20px', flex: 1, background: '#f5f0e8' }}>
 
         {/* Export */}
-        <button onClick={() => exportPDF()} style={{ width: '100%', padding: '10px', marginBottom: 20, background: '#1a1a2e', color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 13, fontWeight: 600, letterSpacing: 0.2 }}>
+        <button onClick={() => exportPDF()} style={{ width: '100%', padding: '11px', marginBottom: 20, background: '#e37115', color: '#fff', border: 'none', borderRadius: 3, cursor: 'pointer', fontSize: 13, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', fontFamily: "'Barlow Condensed', sans-serif" }}>
           ⬇ Export Site Report (PDF)
         </button>
 
@@ -1164,7 +1164,7 @@ function SitePanel({ selected, onClose }) {
           return (
           <>
           <PanelSection title="NYSDEC Remediation Site Details">
-            <div style={{ background: '#fdf0f0', border: '1px solid #c0392b22', borderRadius: 8, padding: '14px 16px', marginBottom: 12 }}>
+            <div style={{ background: '#faf5f0', border: '1px solid rgba(189,86,45,0.25)', borderLeft: '3px solid #bd562d', borderRadius: 3, padding: '14px 16px', marginBottom: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                 <div>
                   <div style={{ fontSize: 10, color: '#c0392b', fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 3 }}>{ptLabel}</div>
@@ -1173,7 +1173,7 @@ function SitePanel({ selected, onClose }) {
                 </div>
                 {cls && <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 10, background: clsColor, color: '#fff', flexShrink: 0, marginLeft: 10 }}>{cls.label}</span>}
               </div>
-              {cls && <div style={{ fontSize: 12, color: '#555', lineHeight: 1.6, padding: '8px 10px', background: 'rgba(255,255,255,0.7)', borderRadius: 5, marginBottom: 10 }}>{cls.desc}</div>}
+              {cls && <div style={{ fontSize: 12, color: '#54301a', lineHeight: 1.6, padding: '8px 10px', background: 'rgba(244,239,230,0.9)', borderRadius: 3, marginBottom: 10 }}>{cls.desc}</div>}
               <InfoTable rows={[
                 ['Program #', rem.program_number],
                 ['County', rem.county],
@@ -1181,7 +1181,7 @@ function SitePanel({ selected, onClose }) {
             </div>
 
             {rem.contaminants && (
-              <div style={{ background: '#fff8f0', border: '1px solid #e67e2233', borderRadius: 7, padding: '10px 14px', marginBottom: 12 }}>
+              <div style={{ background: '#faf5e8', border: '1px solid rgba(186,135,72,0.3)', borderLeft: '3px solid #ba8748', borderRadius: 3, padding: '10px 14px', marginBottom: 12 }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#e67e22', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>Contaminants of Concern</div>
                 <div style={{ fontSize: 12, color: '#555', lineHeight: 1.6 }}>{rem.contaminants}</div>
               </div>
@@ -1217,7 +1217,7 @@ function SitePanel({ selected, onClose }) {
           <PanelSection title="Why This Site Was Flagged">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {narrative.map((p, i) => (
-                <p key={i} style={{ fontSize: 12, color: '#444', lineHeight: 1.7, margin: 0, padding: '10px 12px', background: i === 0 ? '#f0f4ff' : 'transparent', borderRadius: 6, borderLeft: i === 0 ? '3px solid #3498db' : '3px solid #e8e8e8' }}>{p}</p>
+                <p key={i} style={{ fontSize: 12, color: '#323e4c', lineHeight: 1.7, margin: 0, padding: '10px 12px', background: i === 0 ? 'rgba(227,113,21,0.07)' : 'transparent', borderRadius: 3, borderLeft: i === 0 ? '3px solid #e37115' : '3px solid #e4ded3', fontFamily: 'Calibri, "Segoe UI", sans-serif' }}>{p}</p>
               ))}
             </div>
           </PanelSection>
@@ -1225,7 +1225,7 @@ function SitePanel({ selected, onClose }) {
 
         {/* OER Cleanup Status */}
         {oer && <PanelSection title="OER Cleanup Site">
-          <div style={{ background: oerStatusColor + '12', border: `1px solid ${oerStatusColor}33`, borderRadius: 8, padding: '14px 16px', marginBottom: 12 }}>
+          <div style={{ background: oerStatusColor + '0f', border: `1px solid ${oerStatusColor}40`, borderLeft: `3px solid ${oerStatusColor}`, borderRadius: 3, padding: '14px 16px', marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <div style={{ fontWeight: 700, color: oerStatusColor, fontSize: 14 }}>{oer.project_name}</div>
               <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 10, background: oerStatusColor, color: '#fff' }}>
@@ -1242,7 +1242,7 @@ function SitePanel({ selected, onClose }) {
 
             {/* Phase description */}
             {oer.phase && OER_PHASES[Object.keys(OER_PHASES).find(k => oer.phase?.includes(k))] && (
-              <div style={{ marginTop: 10, fontSize: 12, color: '#555', lineHeight: 1.6, padding: '8px 10px', background: 'rgba(255,255,255,0.6)', borderRadius: 5 }}>
+              <div style={{ marginTop: 8, fontSize: 12, color: '#54301a', lineHeight: 1.6, padding: '8px 10px', background: 'rgba(244,239,230,0.8)', borderRadius: 3, fontFamily: 'Calibri, "Segoe UI", sans-serif' }}>
                 {OER_PHASES[Object.keys(OER_PHASES).find(k => oer.phase?.includes(k))]}
               </div>
             )}
@@ -1252,7 +1252,7 @@ function SitePanel({ selected, onClose }) {
               const key = Object.keys(OER_PROGRAMS).find(k => prog.includes(k))
               if (!key) return null
               return (
-                <div key={key} style={{ marginTop: 8, fontSize: 12, color: '#555', lineHeight: 1.6, padding: '8px 10px', background: 'rgba(255,255,255,0.6)', borderRadius: 5 }}>
+                <div key={key} style={{ marginTop: 8, fontSize: 12, color: '#54301a', lineHeight: 1.6, padding: '8px 10px', background: 'rgba(244,239,230,0.8)', borderRadius: 3, fontFamily: 'Calibri, "Segoe UI", sans-serif' }}>
                   <strong style={{ color: '#333' }}>{OER_PROGRAMS[key].label}:</strong> {OER_PROGRAMS[key].desc}
                 </div>
               )
@@ -1273,13 +1273,13 @@ function SitePanel({ selected, onClose }) {
 
         {/* FEIS Documents */}
         {edesig?.ceqr_num && <PanelSection title="FEIS & Environmental Review Documents">
-          <div style={{ background: '#f3eeff', border: '1px solid #dcc8f5', borderRadius: 7, padding: '12px 14px' }}>
-            <div style={{ fontSize: 11, color: '#7d3c98', fontWeight: 700, marginBottom: 4 }}>CEQR Number: {edesig.ceqr_num}</div>
-            <div style={{ fontSize: 12, color: '#555', lineHeight: 1.5, marginBottom: 10 }}>
+          <div style={{ background: '#faf5e8', border: '1px solid rgba(186,135,72,0.3)', borderLeft: '3px solid #e37115', borderRadius: 3, padding: '12px 14px' }}>
+            <div style={{ fontSize: 11, color: '#a3551d', fontWeight: 700, marginBottom: 4, letterSpacing: 0.5, fontFamily: "'Barlow', sans-serif" }}>CEQR Number: {edesig.ceqr_num}</div>
+            <div style={{ fontSize: 12, color: '#54301a', lineHeight: 1.5, marginBottom: 10, fontFamily: 'Calibri, "Segoe UI", sans-serif' }}>
               The Final Environmental Impact Statement (FEIS) and all associated CEQR review documents are accessible through the NYC CEQR document search portal.
             </div>
             <button onClick={() => openCeqr(edesig.ceqr_num)}
-              style={{ display: 'block', width: '100%', padding: '9px', background: '#7d3c98', color: '#fff', borderRadius: 5, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', textAlign: 'center' }}>
+              style={{ display: 'block', width: '100%', padding: '9px', background: '#e37115', color: '#fff', borderRadius: 3, fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', textAlign: 'center', fontFamily: "'Barlow', sans-serif", letterSpacing: 0.8, textTransform: 'uppercase' }}>
               Search CEQR Documents for {edesig.ceqr_num} →
             </button>
           </div>
@@ -1294,7 +1294,7 @@ function SitePanel({ selected, onClose }) {
           ].filter(t => edesig && isTrue(edesig[`${t.key}_code`])).map(t => {
             const remDate = edesig[`${t.key}_date`] ? fmt(edesig[`${t.key}_date`]) : null
             return (
-              <div key={t.key} style={{ borderLeft: `4px solid ${t.color}`, background: t.color + '10', borderRadius: '0 6px 6px 0', padding: '9px 12px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div key={t.key} style={{ borderLeft: `4px solid ${t.color}`, background: t.color + '0d', borderRadius: '0 3px 3px 0', padding: '9px 12px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontWeight: 700, color: t.color, fontSize: 13 }}>{t.label}</span>
                 <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 9px', borderRadius: 10, background: remDate ? '#27ae60' : t.color, color: '#fff' }}>
                   {remDate ? `Remediated ${remDate}` : 'ACTIVE'}
@@ -1358,7 +1358,7 @@ function SitePanel({ selected, onClose }) {
               const cls = REM_SITE_CLASSES[s.siteclass]
               const clsColor = ['1','2'].includes(s.siteclass) ? '#c0392b' : ['3'].includes(s.siteclass) ? '#e67e22' : ['4','5','C'].includes(s.siteclass) ? '#27ae60' : '#888'
               return (
-                <div key={i} style={{ background: '#fdf0f0', border: '1px solid #c0392b22', borderRadius: 7, padding: '10px 12px', marginBottom: 8 }}>
+                <div key={i} style={{ background: '#faf5f0', border: '1px solid rgba(189,86,45,0.2)', borderLeft: '3px solid #bd562d', borderRadius: 3, padding: '10px 12px', marginBottom: 8 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
                     <div style={{ fontWeight: 700, fontSize: 12, color: '#c0392b' }}>{s.site_name || '—'}</div>
                     {cls && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 8, background: clsColor, color: '#fff', flexShrink: 0, marginLeft: 8 }}>{cls.label}</span>}
@@ -1386,7 +1386,7 @@ function SitePanel({ selected, onClose }) {
 function PanelSection({ title, children }) {
   return (
     <div style={{ marginBottom: 24 }}>
-      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: '#bbb', marginBottom: 10, paddingBottom: 6, borderBottom: '1px solid #e8e8e8' }}>{title}</div>
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: '#a3551d', marginBottom: 10, paddingBottom: 6, borderBottom: '2px solid #e4ded3', fontFamily: "'Barlow Condensed', sans-serif" }}>{title}</div>
       {children}
     </div>
   )
@@ -1396,9 +1396,9 @@ function InfoTable({ rows }) {
   return (
     <div>
       {rows.filter(r => r && r[1]).map(([label, value]) => (
-        <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '6px 0', borderBottom: '1px solid #f0f0f0' }}>
-          <span style={{ fontSize: 12, color: '#aaa', fontWeight: 600, flexShrink: 0, marginRight: 12 }}>{label}</span>
-          <span style={{ fontSize: 12, color: '#333', textAlign: 'right', wordBreak: 'break-word', maxWidth: '65%' }}>{value}</span>
+        <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '6px 0', borderBottom: '1px solid #e4ded3' }}>
+          <span style={{ fontSize: 11, color: '#a8a198', fontWeight: 600, flexShrink: 0, marginRight: 12, textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: "'Barlow', sans-serif" }}>{label}</span>
+          <span style={{ fontSize: 12, color: '#323e4c', textAlign: 'right', wordBreak: 'break-word', maxWidth: '65%', fontFamily: 'Calibri, "Segoe UI", sans-serif' }}>{value}</span>
         </div>
       ))}
     </div>
@@ -1407,7 +1407,7 @@ function InfoTable({ rows }) {
 
 function ExtLink({ href, color, children }) {
   return (
-    <a href={href} target="_blank" rel="noreferrer" style={{ display: 'block', padding: '8px 12px', borderRadius: 6, border: `1px solid ${color}33`, background: `${color}0c`, color, fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
+    <a href={href} target="_blank" rel="noreferrer" style={{ display: 'block', padding: '8px 12px', borderRadius: 3, border: `1px solid #cbbba0`, borderLeft: `3px solid ${color}`, background: '#faf5f0', color, fontSize: 12, fontWeight: 600, textDecoration: 'none', fontFamily: "'Barlow', sans-serif", letterSpacing: 0.3 }}>
       {children}
     </a>
   )
