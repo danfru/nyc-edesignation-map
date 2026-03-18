@@ -513,10 +513,10 @@ export default function App() {
   })
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div style={{ position: 'relative', height: '100vh', width: '100vw', overflow: 'hidden', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
       {/* ── Header ── */}
-      <div style={{ background: '#1a1a2e', color: '#fff', height: 52, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 12, flexShrink: 0, zIndex: 1000, boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, background: 'rgba(13,13,30,0.72)', backdropFilter: 'blur(18px) saturate(180%)', WebkitBackdropFilter: 'blur(18px) saturate(180%)', color: '#fff', height: 52, display: 'flex', alignItems: 'center', padding: '0 16px', gap: 12, zIndex: 1000, borderBottom: '1px solid rgba(255,255,255,0.09)' }}>
         <img src="/logo.png" alt="Impact" style={{ height: 34, width: 34, objectFit: 'contain', flexShrink: 0 }} />
         <strong style={{ fontSize: 14, whiteSpace: 'nowrap', letterSpacing: 0.3 }}>NYC Environmental Site Map</strong>
         <div style={{ width: 1, height: 24, background: '#333', flexShrink: 0 }} />
@@ -566,11 +566,8 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── Body ── */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-
         {/* ── Map ── */}
-        <div style={{ flex: 1, position: 'relative' }}>
+        <div style={{ position: 'absolute', inset: 0 }}>
           <MapContainer center={[40.72, -73.98]} zoom={11} style={{ position: 'absolute', inset: 0 }}>
             <Resizer />
             <MapFlyTo target={flyTarget} />
@@ -614,7 +611,7 @@ export default function App() {
 
           {/* ── Legend ── */}
           {status === 'done' && (
-            <div style={{ position: 'absolute', bottom: 24, left: 12, background: '#fff', borderRadius: 8, padding: '12px 16px', boxShadow: '0 2px 12px rgba(0,0,0,0.15)', zIndex: 500, fontSize: 12, minWidth: 180 }}>
+            <div style={{ position: 'absolute', bottom: 24, left: 12, background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(14px) saturate(150%)', WebkitBackdropFilter: 'blur(14px) saturate(150%)', border: '1px solid rgba(255,255,255,0.55)', borderRadius: 10, padding: '12px 16px', boxShadow: '0 4px 24px rgba(0,0,0,0.12)', zIndex: 500, fontSize: 12, minWidth: 180 }}>
               <div style={{ fontWeight: 700, color: '#1a1a2e', marginBottom: 8, fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.8 }}>E-Designation Type</div>
               {[['#e74c3c','Hazardous Materials'],['#e67e22','Air Quality'],['#3498db','Noise'],['#888','Other']].map(([c,l]) => (
                 <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
@@ -684,7 +681,7 @@ export default function App() {
 
           {/* Debug status (top-right, small) */}
           {status === 'done' && (
-            <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#0f0', fontFamily: 'monospace', fontSize: 10, padding: '5px 10px', borderRadius: 4, zIndex: 500, lineHeight: 1.8 }}>
+            <div style={{ position: 'absolute', bottom: 24, right: 12, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', color: '#0f0', fontFamily: 'monospace', fontSize: 10, padding: '5px 10px', borderRadius: 6, zIndex: 500, lineHeight: 1.8, border: '1px solid rgba(0,255,0,0.12)' }}>
               E-desig: {edesigSites.length} · OER: {oerSites.length} · Rem: {remSites.length}
             </div>
           )}
@@ -692,11 +689,10 @@ export default function App() {
 
         {/* ── Side Panel ── */}
         {selected && (
-          <div style={{ width: 440, borderLeft: '1px solid #e5e5e5', overflowY: 'auto', background: '#fafafa', flexShrink: 0 }}>
+          <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: 440, overflowY: 'auto', background: 'rgba(248,248,252,0.88)', backdropFilter: 'blur(22px) saturate(160%)', WebkitBackdropFilter: 'blur(22px) saturate(160%)', borderLeft: '1px solid rgba(255,255,255,0.45)', boxShadow: '-10px 0 48px rgba(0,0,0,0.2)', zIndex: 800 }}>
             <SitePanel selected={selected} onClose={() => setSelected(null)} />
           </div>
         )}
-      </div>
     </div>
   )
 }
@@ -1115,7 +1111,7 @@ function SitePanel({ selected, onClose }) {
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
 
       {/* Header */}
-      <div style={{ background: '#1a1a2e', color: '#fff', padding: '18px 20px', flexShrink: 0 }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(13,13,30,0.88)', backdropFilter: 'blur(16px) saturate(180%)', WebkitBackdropFilter: 'blur(16px) saturate(180%)', borderBottom: '1px solid rgba(255,255,255,0.09)', color: '#fff', padding: '18px 20px', flexShrink: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             {edesig && <>
