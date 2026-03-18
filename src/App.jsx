@@ -36,14 +36,14 @@ const OER_PHASES = {
 }
 
 function edesigColor(site) {
-  if (isTrue(site.hazmat_code)) return '#e74c3c'
-  if (isTrue(site.air_code))    return '#e67e22'
-  if (isTrue(site.noise_code))  return '#3498db'
-  return '#888'
+  if (isTrue(site.hazmat_code)) return '#bd562d'  // Sinopia
+  if (isTrue(site.air_code))    return '#e37115'  // Chocolate Web
+  if (isTrue(site.noise_code))  return '#185676'  // Blue Sapphire
+  return '#a8a198'                                 // Quicksilver
 }
 
 function oerColor(site) {
-  return site.class?.includes('Active') ? '#9b59b6' : '#16a085'
+  return site.class?.includes('Active') ? '#443717' : '#96a153'  // Seal Brown / Moss Green
 }
 
 function isTrue(v) { return v === true || v === 'true' }
@@ -613,32 +613,32 @@ export default function App() {
           {status === 'done' && (
             <div style={{ position: 'absolute', bottom: 24, left: 12, background: 'rgba(245,240,232,0.95)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid #cbbba0', borderLeft: '3px solid #e37115', borderRadius: 4, padding: '12px 16px', boxShadow: '0 4px 20px rgba(68,55,23,0.18)', zIndex: 500, fontSize: 12, minWidth: 180 }}>
               <div style={{ fontWeight: 700, color: '#443717', marginBottom: 8, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.2, fontFamily: "'Barlow Condensed', sans-serif" }}>E-Designation Type</div>
-              {[['#e74c3c','Hazardous Materials'],['#e67e22','Air Quality'],['#3498db','Noise'],['#888','Other']].map(([c,l]) => (
+              {[['#bd562d','Hazardous Materials'],['#e37115','Air Quality'],['#185676','Noise'],['#a8a198','Other']].map(([c,l]) => (
                 <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: c, flexShrink: 0 }} />
                   <span style={{ color: '#54301a' }}>{l}</span>
                 </div>
               ))}
-              <div style={{ height: 1, background: '#eee', margin: '10px 0' }} />
+              <div style={{ height: 1, background: '#e4ded3', margin: '10px 0' }} />
               <div style={{ fontWeight: 700, color: '#443717', marginBottom: 8, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.2, fontFamily: "'Barlow Condensed', sans-serif" }}>OER Cleanup Sites</div>
-              {[['#9b59b6','Active Remediation'],['#16a085','Completed']].map(([c,l]) => (
+              {[['#443717','Active Remediation'],['#96a153','Completed']].map(([c,l]) => (
                 <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
                   <div style={{ width: 12, height: 12, borderRadius: '50%', border: `2.5px solid ${c}`, background: c+'30', flexShrink: 0 }} />
                   <span style={{ color: '#54301a' }}>{l}</span>
                 </div>
               ))}
-              <div style={{ height: 1, background: '#eee', margin: '10px 0' }} />
+              <div style={{ height: 1, background: '#e4ded3', margin: '10px 0' }} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                 <div style={{ position: 'relative', width: 14, height: 14, flexShrink: 0 }}>
-                  <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2.5px solid #9b59b6', background: '#9b59b630' }} />
-                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 6, height: 6, borderRadius: '50%', background: '#e74c3c' }} />
+                  <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2.5px solid #443717', background: '#44371730' }} />
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 6, height: 6, borderRadius: '50%', background: '#bd562d' }} />
                 </div>
                 <span style={{ color: '#54301a' }}>E-Desig + OER Overlap</span>
               </div>
-              <div style={{ height: 1, background: '#eee', margin: '10px 0' }} />
+              <div style={{ height: 1, background: '#e4ded3', margin: '10px 0' }} />
               <div style={{ fontWeight: 700, color: '#443717', marginBottom: 8, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1.2, fontFamily: "'Barlow Condensed', sans-serif" }}>NYSDEC Remediation</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <div style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid #c0392b', background: '#c0392b20', flexShrink: 0 }} />
+                <div style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid #bd562d', background: '#bd562d20', flexShrink: 0 }} />
                 <span style={{ color: '#54301a' }}>Remediation Site</span>
               </div>
             </div>
@@ -756,14 +756,14 @@ function SitePanel({ selected, onClose }) {
   }, [rem?.address])
 
   const eTypes = edesig ? [
-    { key: 'hazmat', label: 'Hazardous Materials', color: '#e74c3c' },
-    { key: 'air',    label: 'Air Quality',          color: '#e67e22' },
-    { key: 'noise',  label: 'Noise',                color: '#3498db' },
+    { key: 'hazmat', label: 'Hazardous Materials', color: '#bd562d' },
+    { key: 'air',    label: 'Air Quality',          color: '#e37115' },
+    { key: 'noise',  label: 'Noise',                color: '#185676' },
   ].filter(t => isTrue(edesig[`${t.key}_code`])) : []
 
   const narrative = edesig ? buildNarrative(edesig, borough) : []
   const isActive = oer?.class?.includes('Active')
-  const oerStatusColor = oer ? (isActive ? '#9b59b6' : '#16a085') : null
+  const oerStatusColor = oer ? (isActive ? '#443717' : '#96a153') : null
   const oerPrograms = oer?.oer_program?.split(',').map(p => p.trim()) || []
 
   function openCeqr(ceqrNum) {
@@ -839,54 +839,62 @@ function SitePanel({ selected, onClose }) {
     }
 
     // ── HEADER ──────────────────────────────────────────────────────
+    // Dark brown background
     doc.setFillColor(68, 55, 23)
-    doc.rect(0, 0, 612, 84, 'F')
-    // Diagonal stripe overlay
-    doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.3); doc.setGState(new doc.GState({ opacity: 0.04 }))
-    for (let sx = -80; sx < 680; sx += 10) { doc.line(sx, 0, sx + 84, 84) }
-    doc.setGState(new doc.GState({ opacity: 1 }))
-    // Orange accent bar
+    doc.rect(0, 0, 612, 96, 'F')
+    // Left orange accent bar
     doc.setFillColor(227, 113, 21)
-    doc.rect(0, 84, 612, 4, 'F')
+    doc.rect(0, 0, 6, 96, 'F')
+    // Orange bottom bar
+    doc.setFillColor(227, 113, 21)
+    doc.rect(0, 96, 612, 4, 'F')
+    // Subtle warm highlight strip behind text area
+    doc.setFillColor(84, 48, 26)
+    doc.rect(6, 0, 606, 96, 'F')
+    // Re-draw orange left bar on top
+    doc.setFillColor(227, 113, 21)
+    doc.rect(0, 0, 6, 96, 'F')
 
-    if (logoDataUrl) doc.addImage(logoDataUrl, 'PNG', L, 17, 48, 48)
-    const titleX = logoDataUrl ? L + 58 : L
+    if (logoDataUrl) doc.addImage(logoDataUrl, 'PNG', L, 20, 50, 50)
+    const titleX = logoDataUrl ? L + 62 : L + 10
 
-    doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
+    doc.setFontSize(19); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255)
     const reportTitle = edesig ? 'E-Designation Site Report' : rem ? 'NYSDEC Remediation Site Report' : 'OER Cleanup Site Report'
-    doc.text(reportTitle, titleX, 34)
+    doc.text(reportTitle, titleX, 36)
 
-    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(203, 187, 160)
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.setTextColor(255, 255, 255)
     const subLine = edesig
       ? `${edesig.enumber}  ·  ${borough}  ·  BBL ${edesig.bbl}`
       : rem
         ? `${rem.site_name ?? '—'}  ·  ${rem.address ?? ''}  ·  ${rem.county}`
         : `${oer?.project_name ?? '—'}  ·  ${borough}`
-    doc.text(subLine, titleX, 49)
+    doc.text(subLine, titleX, 52)
 
-    doc.setFontSize(7.5); doc.setTextColor(186, 135, 72)
-    doc.text(`Impact Environmental  ·  impactenvironmental.com  ·  ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, titleX, 63)
+    doc.setFontSize(8); doc.setTextColor(203, 187, 160)
+    doc.text(`Impact Environmental  ·  impactenvironmental.com  ·  ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, titleX, 67)
+    doc.setFontSize(7); doc.setTextColor(186, 135, 72); doc.setFont('helvetica', 'bold')
+    doc.text('WELCOME TO SOLID GROUND  ·  EXPERT ENVIRONMENTAL REMEDIATION', titleX, 82)
 
     // Designation pills — right-aligned
     let pillX = R
     const hPills = []
-    if (oer) hPills.push({ label: isActive ? 'OER ACTIVE' : 'OER DONE', hex: isActive ? '#9b59b6' : '#16a085' })
+    if (oer) hPills.push({ label: isActive ? 'OER ACTIVE' : 'OER DONE', hex: isActive ? '#443717' : '#96a153' })
     if (edesig) {
-      if (isTrue(edesig.noise_code))  hPills.push({ label: 'NOISE',  hex: edesig.noise_date  ? '#27ae60' : '#3498db' })
-      if (isTrue(edesig.air_code))    hPills.push({ label: 'AIR',    hex: edesig.air_date    ? '#27ae60' : '#e67e22' })
-      if (isTrue(edesig.hazmat_code)) hPills.push({ label: 'HAZMAT', hex: edesig.hazmat_date ? '#27ae60' : '#e74c3c' })
+      if (isTrue(edesig.noise_code))  hPills.push({ label: 'NOISE',  hex: edesig.noise_date  ? '#96a153' : '#185676' })
+      if (isTrue(edesig.air_code))    hPills.push({ label: 'AIR',    hex: edesig.air_date    ? '#96a153' : '#e37115' })
+      if (isTrue(edesig.hazmat_code)) hPills.push({ label: 'HAZMAT', hex: edesig.hazmat_date ? '#96a153' : '#bd562d' })
     }
     hPills.forEach(({ label, hex }) => {
       doc.setFontSize(7); doc.setFont('helvetica', 'bold')
       const pw = doc.getTextWidth(label) + 12
       pillX -= (pw + 5)
       doc.setFillColor(...hexToRgb(hex))
-      doc.roundedRect(pillX, 52, pw, 14, 3, 3, 'F')
+      doc.roundedRect(pillX, 58, pw, 14, 2, 2, 'F')
       doc.setTextColor(255, 255, 255)
-      doc.text(label, pillX + 6, 62)
+      doc.text(label, pillX + 6, 68)
     })
 
-    y = 100
+    y = 112
 
     // ── SITE LOCATION MAP ────────────────────────────────────────────
     if (mapDataUrl) {
@@ -944,9 +952,9 @@ function SitePanel({ selected, onClose }) {
     if (edesig && eTypes.length > 0) {
       sectionHeader('Environmental Designation Status')
       const pdfTypes = [
-        { key: 'hazmat', label: 'Hazardous Materials', rgb: [231, 76, 60] },
-        { key: 'air',    label: 'Air Quality',         rgb: [230, 126, 34] },
-        { key: 'noise',  label: 'Noise',               rgb: [52, 152, 219] },
+        { key: 'hazmat', label: 'Hazardous Materials', rgb: [189, 86, 45] },
+        { key: 'air',    label: 'Air Quality',         rgb: [227, 113, 21] },
+        { key: 'noise',  label: 'Noise',               rgb: [24, 86, 118]  },
       ].filter(t => isTrue(edesig[`${t.key}_code`]))
       pdfTypes.forEach(({ key, label, rgb }) => {
         const remDate = edesig[`${key}_date`]
@@ -957,7 +965,7 @@ function SitePanel({ selected, onClose }) {
         doc.setFontSize(9.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(...rgb)
         doc.text(label, L + 10, y)
         const statusLabel = remDate ? `Remediated  ${fmt(remDate)}` : 'ACTIVE'
-        const pillRgb = remDate ? [39, 174, 96] : rgb
+        const pillRgb = remDate ? [150, 161, 83] : rgb
         doc.setFontSize(7.5); doc.setFont('helvetica', 'bold')
         const pw = doc.getTextWidth(statusLabel) + 14
         doc.setFillColor(...pillRgb)
@@ -990,7 +998,7 @@ function SitePanel({ selected, onClose }) {
 
     // ── OER CLEANUP SITE CONTEXT ─────────────────────────────────────
     if (oer) {
-      const oerRgb = isActive ? [155, 89, 182] : [22, 160, 133]
+      const oerRgb = isActive ? [68, 55, 23] : [150, 161, 83]
       sectionHeader('OER Cleanup Site Context', oerRgb)
       oerPrograms.forEach(prog => {
         const key = Object.keys(OER_PROGRAMS).find(k => prog.includes(k))
